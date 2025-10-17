@@ -1,0 +1,28 @@
+{
+  "name": "WWC",
+  "version": "1.0.0",
+  "description": "Video conferencing app with real-time captions and translation",
+  "main": "server/server.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "start": "cd server && npm start",
+    "install-deps": "npm install && cd server && npm install && cd ../client && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "video-conference",
+    "webrtc",
+    "react",
+    "nodejs",
+    "socket.io",
+    "captions",
+    "translation"
+  ],
+  "author": "WWC Project",
+  "license": "MIT"
+}

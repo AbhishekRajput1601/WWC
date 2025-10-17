@@ -80,6 +80,17 @@ export const login = async (req, res) => {
       });
     }
 
+    // Check if user is already logged in (has valid token)
+    if (req.headers.authorization) {
+      const token = req.headers.authorization.split(" ")[1];
+      if (token) {
+        return res.status(400).json({
+          success: false,
+          message: 'User already logged in',
+        });
+      }
+    }
+
     // Check if password matches
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
@@ -112,6 +123,29 @@ export const login = async (req, res) => {
     });
   }
 };
+
+
+// @desc    Logout user
+// @route   POST /api/auth/logout
+// @access  Private
+export const logout = async (req, res) => {
+  try {
+    res.setHeader("Authorization", ""); 
+
+    return res.status(200).json({
+      success: true,
+      userid : req.user.id,
+      message: "User logged out successfully",
+    });
+  } catch (error) {
+    console.error("Logout error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error during logout",
+    });
+  }
+};
+
 
 // @desc    Get current logged in user
 // @route   GET /api/auth/me
@@ -163,6 +197,82 @@ export const updatePreferences = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error updating preferences',
+    });
+  }
+};
+
+// @desc    forget user password
+// @route   PUT /api/auth/forgot-password
+// @access  Public
+
+// export const forgotPassword = async (req, res) => {
+//   try {
+//     const { email, newPassword } = req.body;
+//     const user = await User.findOne({ email }).select('+password');
+//     if (!user) {
+//       return res.status(404).json({
+//         success: false,
+//         message: 'User not found',
+//       });
+//     }
+//     // Update to new password
+//     user.password = newPassword;
+//     await user.save();
+//     res.json({
+//       success: true,
+//       message: 'Password reset successfully',
+//     });
+//   }catch (error) {
+//     logger.error('Forgot password error:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Server error resetting password',
+//     });
+//   }
+// };
+
+// @desc    Update user password
+// @route   PUT /api/auth/update-password
+// @access  Private
+
+export const updatePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide current and new password',
+      });
+    }
+
+    const user = await User.findById(req.user.id).select('+password');
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+    // Check current password
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Current password is incorrect',
+      });
+    }
+    // Update to new password
+    user.password = newPassword;
+    await user.save();
+    res.json({
+      success: true,
+      message: 'Password updated successfully',
+    });
+  } catch (error) {
+    logger.error('Update password error:', error);
+    res.status(500).json({      
+      success: false,
+      message: 'Server error updating password',
     });
   }
 };
