@@ -61,7 +61,7 @@ PORT=5000
 MONGODB_URI=mongodb://localhost:27017/zoom-clone
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 JWT_EXPIRE=7d
-CLIENT_URL=http://localhost:3000
+CLIENT_URL=http://localhost:5173
 ```
 
 **Client (client/.env):**
@@ -94,7 +94,7 @@ npm run dev
 ```
 
 The application will be available at:
-- Frontend: http://localhost:3000
+- Frontend: http://localhost:5173
 - Backend API: http://localhost:5000
 
 ## 🎯 How to Use
