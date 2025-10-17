@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import api from '../utils/api';
+import authService from '../services/authService';
 
 const AuthContext = createContext();
 
 const initialState = {
   user: null,
-  token: localStorage.getItem('token'),
-  isAuthenticated: false,
+  token: authService.getToken(),
+  isAuthenticated: authService.isAuthenticated(),
   loading: true,
   error: null,
 };
@@ -63,80 +63,69 @@ const authReducer = (state, action) => {
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Load user
+  // Load user profile on app initialization
   const loadUser = async () => {
-    if (localStorage.token) {
-      api.setAuthToken(localStorage.token);
-    }
-
-    try {
-      const res = await api.get('/auth/me');
-      dispatch({
-        type: 'USER_LOADED',
-        payload: res.data.user,
-      });
-    } catch (error) {
-      dispatch({
-        type: 'AUTH_ERROR',
-        payload: error.response?.data?.message || 'Authentication failed',
-      });
-    }
-  };
-
-  // Register user
-  const register = async (formData) => {
-    dispatch({ type: 'SET_LOADING', payload: true });
+    const token = authService.getToken();
     
-    try {
-      const res = await api.post('/auth/register', formData);
-      dispatch({
-        type: 'REGISTER_SUCCESS',
-        payload: res.data,
-      });
-      return { success: true };
-    } catch (error) {
-      dispatch({
-        type: 'REGISTER_FAIL',
-        payload: error.response?.data?.message || 'Registration failed',
-      });
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'Registration failed' 
-      };
+    if (token) {
+      try {
+        const result = await authService.getProfile();
+        
+        if (result.success) {
+          dispatch({
+            type: 'USER_LOADED',
+            payload: result.user,
+          });
+        } else {
+          dispatch({
+            type: 'AUTH_ERROR',
+            payload: result.message,
+          });
+        }
+      } catch (error) {
+        dispatch({
+          type: 'AUTH_ERROR',
+          payload: 'Authentication failed',
+        });
+      }
+    } else {
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
   };
 
-  // Login user
-  const login = async (formData) => {
-    dispatch({ type: 'SET_LOADING', payload: true });
-    
+  // Logout user
+  const logout = async () => {
     try {
-      const res = await api.post('/auth/login', formData);
-      dispatch({
-        type: 'LOGIN_SUCCESS',
-        payload: res.data,
-      });
-      return { success: true };
+      await authService.logout();
+      dispatch({ type: 'LOGOUT' });
     } catch (error) {
-      dispatch({
-        type: 'LOGIN_FAIL',
-        payload: error.response?.data?.message || 'Login failed',
-      });
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'Login failed' 
-      };
+      // Even if logout API fails, clear local state
+      dispatch({ type: 'LOGOUT' });
     }
-  };
-
-  // Logout
-  const logout = () => {
-    dispatch({ type: 'LOGOUT' });
   };
 
   // Clear errors
   const clearErrors = () => {
     dispatch({ type: 'CLEAR_ERRORS' });
+  };
+
+  // Update user preferences
+  const updatePreferences = async (preferences) => {
+    try {
+      const result = await authService.updatePreferences(preferences);
+      
+      if (result.success) {
+        dispatch({
+          type: 'USER_LOADED',
+          payload: result.user,
+        });
+        return { success: true };
+      } else {
+        return { success: false, message: result.message };
+      }
+    } catch (error) {
+      return { success: false, message: 'Failed to update preferences' };
+    }
   };
 
   useEffect(() => {
@@ -147,11 +136,11 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         ...state,
-        login,
-        register,
+        dispatch,
         logout,
         clearErrors,
         loadUser,
+        updatePreferences,
       }}
     >
       {children}

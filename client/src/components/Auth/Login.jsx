@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import authService from '../../services/authService';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -10,7 +11,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { login } = useAuth();
+  const { dispatch } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -25,12 +26,28 @@ const Login = () => {
     setLoading(true);
     setError('');
 
-    const result = await login(formData);
-    
-    if (result.success) {
-      navigate('/dashboard');
-    } else {
-      setError(result.message);
+    try {
+      // Direct API call to login endpoint
+      const result = await authService.login(formData);
+      
+      if (result.success) {
+        // Update auth context with user data
+        dispatch({
+          type: 'LOGIN_SUCCESS',
+          payload: {
+            token: result.token,
+            user: result.user
+          }
+        });
+        
+        // Navigate to dashboard
+        navigate('/dashboard');
+      } else {
+        setError(result.message);
+      }
+    } catch (error) {
+      setError('An unexpected error occurred. Please try again.');
+      console.error('Login error:', error);
     }
     
     setLoading(false);

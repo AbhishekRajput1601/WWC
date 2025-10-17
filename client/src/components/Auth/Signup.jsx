@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import authService from '../../services/authService';
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -12,7 +13,7 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { register } = useAuth();
+  const { dispatch } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -27,19 +28,38 @@ const Signup = () => {
     setLoading(true);
     setError('');
 
+    // Validate password confirmation
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       setLoading(false);
       return;
     }
 
-    const { confirmPassword, ...registerData } = formData;
-    const result = await register(registerData);
-    
-    if (result.success) {
-      navigate('/dashboard');
-    } else {
-      setError(result.message);
+    try {
+      // Prepare registration data (remove confirmPassword)
+      const { confirmPassword, ...registerData } = formData;
+      
+      // Direct API call to registration endpoint
+      const result = await authService.register(registerData);
+      
+      if (result.success) {
+        // Update auth context with user data
+        dispatch({
+          type: 'REGISTER_SUCCESS',
+          payload: {
+            token: result.token,
+            user: result.user
+          }
+        });
+        
+        // Navigate to dashboard
+        navigate('/dashboard');
+      } else {
+        setError(result.message);
+      }
+    } catch (error) {
+      setError('An unexpected error occurred. Please try again.');
+      console.error('Registration error:', error);
     }
     
     setLoading(false);
