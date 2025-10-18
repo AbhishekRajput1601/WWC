@@ -63,6 +63,7 @@ const authReducer = (state, action) => {
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
+  
   // Load user profile on app initialization
   const loadUser = async () => {
     const token = authService.getToken();
@@ -70,7 +71,6 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       try {
         const result = await authService.getProfile();
-        
         if (result.success) {
           dispatch({
             type: 'USER_LOADED',
