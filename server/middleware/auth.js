@@ -25,7 +25,6 @@ export const protect = async (req, res, next) => {
   try {
     // Verify token
     const decoded = verifyToken(token);
-
     // Get user from token
     req.user = await User.findById(decoded.id);
 

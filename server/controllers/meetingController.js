@@ -2,9 +2,7 @@ import Meeting from '../models/Meeting.js';
 import { v4 as uuidv4 } from 'uuid';
 import logger from '../utils/logger.js';
 
-// @desc    Create a new meeting
-// @route   POST /api/meetings
-// @access  Private
+
 export const createMeeting = async (req, res) => {
   try {
     const { title, description, settings = {} } = req.body;
@@ -41,9 +39,7 @@ export const createMeeting = async (req, res) => {
   }
 };
 
-// @desc    Join a meeting
-// @route   POST /api/meetings/:meetingId/join
-// @access  Private
+
 export const joinMeeting = async (req, res) => {
   try {
     const { meetingId } = req.params;
@@ -105,9 +101,7 @@ export const joinMeeting = async (req, res) => {
   }
 };
 
-// @desc    Leave a meeting
-// @route   POST /api/meetings/:meetingId/leave
-// @access  Private
+
 export const leaveMeeting = async (req, res) => {
   try {
     const { meetingId } = req.params;
@@ -146,9 +140,7 @@ export const leaveMeeting = async (req, res) => {
   }
 };
 
-// @desc    End a meeting
-// @route   POST /api/meetings/:meetingId/end
-// @access  Private (Host only)
+
 export const endMeeting = async (req, res) => {
   try {
     const { meetingId } = req.params;
@@ -197,9 +189,7 @@ export const endMeeting = async (req, res) => {
   }
 };
 
-// @desc    Get meeting details
-// @route   GET /api/meetings/:meetingId
-// @access  Private
+
 export const getMeeting = async (req, res) => {
   try {
     const { meetingId } = req.params;
@@ -228,9 +218,7 @@ export const getMeeting = async (req, res) => {
   }
 };
 
-// @desc    Get user's meetings
-// @route   GET /api/meetings
-// @access  Private
+
 export const getUserMeetings = async (req, res) => {
   try {
     const meetings = await Meeting.find({
@@ -254,4 +242,68 @@ export const getUserMeetings = async (req, res) => {
       message: 'Server error getting meetings',
     });
   }
+};
+
+
+export const addUserInMeeting = async (req, res) => {
+  try {
+    const { meetingId, userId } = req.body;
+    // Find the meeting first
+    const meeting = await Meeting.findOne({ meetingId });
+    if (!meeting) {
+      return res.status(404).json({ success: false, message: 'Meeting not found' });
+    }
+    // Check if user is already a participant
+    const alreadyParticipant = (meeting.participants || []).some(
+      (p) => p.user && p.user.toString() === userId
+    );
+    if (alreadyParticipant) {
+      await meeting.populate('participants.user', '-password');
+      return res.status(200).json({
+        success: true,
+        message: 'User already in meeting',
+        data: meeting
+      });
+    }
+    // Add user as participant
+    meeting.participants.push({ user: userId, joinedAt: new Date(), isActive: true });
+    await meeting.save();
+    await meeting.populate('participants.user', '-password');
+    res.status(200).json({
+      success: true,
+      message: 'User added to meeting',
+      data: meeting
+    });
+  } catch (error) {
+    logger.error('Error adding user to meeting:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error adding user to meeting',
+    });
+  }
+};
+
+
+export const deleteMeeting = async (req, res) => {
+  try {
+    const { meetingId } = req.params;
+    const meeting = await Meeting.findOneAndDelete({ meetingId });
+    if (!meeting) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Meeting not found' 
+      });
+    }   
+    res.status(200).json({
+      success: true,
+      message: 'Meeting deleted successfully',
+    });
+  }
+  catch (error) {
+    logger.error('Delete meeting error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error deleting meeting',
+    });
+  } 
 };

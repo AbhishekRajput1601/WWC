@@ -7,6 +7,7 @@ import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import meetingRoutes from './routes/meetingRoutes.js';
 import captionRoutes from './routes/captionRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 import { setupSignaling } from './sockets/signaling.js';
 import { setupCaptions } from './sockets/captions.js';
 
@@ -36,11 +37,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/meetings', meetingRoutes);
 app.use('/api/captions', captionRoutes);
+app.use('/api/admin', adminRoutes);
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Server is running' });
-});
 
 // Socket.IO setup
 setupSignaling(io);

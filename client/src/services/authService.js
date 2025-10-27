@@ -23,13 +23,9 @@ class AuthService {
         api.setAuthToken(response.data.token);
       }
       
-      return {
-        success: true,
-        data: response.data,
-        user: response.data.user,
-        token: response.data.token
-      };
+      return response.data;
     } catch (error) {
+      console.error('Registration error:', error);
       return {
         success: false,
         message: error.response?.data?.message || 'Registration failed',

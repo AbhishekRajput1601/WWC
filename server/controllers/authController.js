@@ -1,10 +1,8 @@
 import User from '../models/User.js';
+import Meeting from '../models/Meeting.js';
 import { generateToken } from '../utils/tokenUtils.js';
 import logger from '../utils/logger.js';
 
-// @desc    Register user
-// @route   POST /api/auth/register
-// @access  Public
 export const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -29,7 +27,7 @@ export const register = async (req, res) => {
     const user = await User.create({
       name,
       email,
-      password,
+      password
     });
 
     // Generate token
@@ -56,9 +54,7 @@ export const register = async (req, res) => {
   }
 };
 
-// @desc    Authenticate user & get token
-// @route   POST /api/auth/login
-// @access  Public
+
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -125,9 +121,6 @@ export const login = async (req, res) => {
 };
 
 
-// @desc    Logout user
-// @route   POST /api/auth/logout
-// @access  Private
 export const logout = async (req, res) => {
   try {
     res.setHeader("Authorization", ""); 
@@ -147,9 +140,6 @@ export const logout = async (req, res) => {
 };
 
 
-// @desc    Get current logged in user
-// @route   GET /api/auth/me
-// @access  Private
 export const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
@@ -172,107 +162,33 @@ export const getMe = async (req, res) => {
   }
 };
 
-// @desc    Update user preferences
-// @route   PUT /api/auth/preferences
-// @access  Private
-export const updatePreferences = async (req, res) => {
+
+export const updateUserDetails = async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      { preferences: req.body },
-      { new: true, runValidators: true }
-    );
-
-    res.json({
-      success: true,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        preferences: user.preferences,
-      },
-    });
-  } catch (error) {
-    logger.error('Update preferences error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error updating preferences',
-    });
-  }
-};
-
-// @desc    forget user password
-// @route   PUT /api/auth/forgot-password
-// @access  Public
-
-// export const forgotPassword = async (req, res) => {
-//   try {
-//     const { email, newPassword } = req.body;
-//     const user = await User.findOne({ email }).select('+password');
-//     if (!user) {
-//       return res.status(404).json({
-//         success: false,
-//         message: 'User not found',
-//       });
-//     }
-//     // Update to new password
-//     user.password = newPassword;
-//     await user.save();
-//     res.json({
-//       success: true,
-//       message: 'Password reset successfully',
-//     });
-//   }catch (error) {
-//     logger.error('Forgot password error:', error);
-//     res.status(500).json({
-//       success: false,
-//       message: 'Server error resetting password',
-//     });
-//   }
-// };
-
-// @desc    Update user password
-// @route   PUT /api/auth/update-password
-// @access  Private
-
-export const updatePassword = async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-    
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide current and new password',
-      });
-    }
-
-    const user = await User.findById(req.user.id).select('+password');
+    const { userId, name, email, role } = req.body;
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({
         success: false,
         message: 'User not found',
       });
     }
-    // Check current password
-    const isMatch = await user.matchPassword(currentPassword);
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: 'Current password is incorrect',
-      });
-    }
-    // Update to new password
-    user.password = newPassword;
+    user.name = name || user.name;
+    user.email = email || user.email;
+    user.role = role || user.role;
     await user.save();
     res.json({
       success: true,
-      message: 'Password updated successfully',
+      message: 'User details updated successfully',
     });
-  } catch (error) {
-    logger.error('Update password error:', error);
-    res.status(500).json({      
+  }
+  catch (error) {
+    logger.error('Update user details error:', error);
+    res.status(500).json({
       success: false,
-      message: 'Server error updating password',
+      message: 'Server error updating user details',
     });
   }
 };
+
+

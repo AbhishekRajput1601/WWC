@@ -105,7 +105,24 @@ const Signup = () => {
               </div>
             )}
             
-            <div className="space-y-4">             
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="name" className="block text-sm font-semibold text-neutral-700 mb-2">
+                  Full Name
+                </label>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  autoComplete="name"
+                  required
+                  className="block w-full px-4 py-3 border border-neutral-200 rounded-xl text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-wwc-500 focus:border-wwc-500 transition-all duration-200 bg-neutral-50 focus:bg-white"
+                  placeholder="Enter your full name"
+                  value={formData.name}
+                  onChange={handleChange}
+                />
+              </div>
+                           
               <div>
                 <label htmlFor="email" className="block text-sm font-semibold text-neutral-700 mb-2">
                   Email Address

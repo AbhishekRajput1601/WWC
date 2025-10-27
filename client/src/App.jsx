@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext'
 import Navbar from './components/Layout/Navbar'
 import Home from './pages/Home'
 import Dashboard from './pages/Dashboard'
+import AdminDashboard from './pages/AdminDashboard'
 import MeetingRoom from './pages/MeetingRoom'
 import Login from './components/Auth/Login'
 import Signup from './components/Auth/Signup'
@@ -19,6 +20,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/meeting/:meetingId" element={<MeetingRoom />} />
           </Routes>
         </div>

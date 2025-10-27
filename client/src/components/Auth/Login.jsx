@@ -39,9 +39,12 @@ const Login = () => {
             user: result.user
           }
         });
-        
-        // Navigate to dashboard
-        navigate('/dashboard');
+        // Navigate to correct dashboard based on role and replace history to disable back button
+        if (result.data.user.name === 'admin') {
+          navigate('/admin-dashboard', { replace: true });
+        } else {
+          navigate('/dashboard', { replace: true });
+        }
       } else {
         setError(result.message);
       }

@@ -49,15 +49,31 @@ const Dashboard = () => {
   const handleJoinMeeting = (e) => {
     e.preventDefault();
     if (joinMeetingId.trim()) {
-      navigate(`/meeting/${joinMeetingId.trim()}`);
+      // Call backend to add user as participant before navigating
+      (async () => {
+        try {
+          await api.post('/meetings/add-user-in-meeting', {
+            meetingId: joinMeetingId.trim(),
+            userId: user.id,
+          });
+          // Optionally log for debug
+          // console.log(user.id, joinMeetingId.trim());
+        } catch (err) {
+          // Optionally show error to user
+          console.error('Error joining meeting:', err);
+        } finally {
+          navigate(`/meeting/${joinMeetingId.trim()}`);
+        }
+      })();
     }
   };
 
   const handleDeleteMeeting = async (meetingId) => {
     if (window.confirm('Are you sure you want to delete this meeting?')) {
       try {
-        await api.delete(`/meetings/${meetingId}`);
-        setMeetings(meetings.filter(meeting => meeting._id !== meetingId));
+        // Call backend to delete meeting by meetingId (UUID)
+        await api.delete(`/meetings/delete-meeting/${meetingId}`);
+        setMeetings(meetings.filter(meeting => meeting.meetingId !== meetingId));
       } catch (error) {
         console.error('Error deleting meeting:', error);
         alert('Failed to delete meeting. Please try again.');
@@ -69,7 +85,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-wwc-50 via-white to-accent-50 flex items-center justify-center">
         <div className="text-center animate-fade-in">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-2xl flex items-center justify-center shadow-medium mb-6">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-2xl flex items-center justify-center shadow-medium">
             <div className="animate-pulse-soft">
               <span className="text-white font-bold text-2xl font-display">W</span>
             </div>
@@ -82,7 +98,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-wwc-50 via-white to-accent-50">
+    <div className="mt-8 min-h-screen bg-gradient-to-br from-wwc-50 via-white to-accent-50">
       <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div className="">
           {/* Header Section */}
@@ -147,7 +163,7 @@ const Dashboard = () => {
                       Create & Start Meeting
                     </div>
                   </button>
-                </form>
+                </form> 
               </div>
             </div>
 
@@ -170,7 +186,7 @@ const Dashboard = () => {
                     <label className="block text-sm font-semibold text-neutral-800 mb-2">Meeting ID</label>
                     <input
                       type="text"
-                      placeholder="Enter 9-digit meeting ID"
+                      placeholder="Enter Meeting ID To Join Meeting"
                       className="w-full px-4 py-3 border-2 border-neutral-300 rounded-xl text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-success-500 focus:border-success-500 transition-all duration-200 bg-white font-mono text-lg tracking-wider shadow-sm"
                       value={joinMeetingId}
                       onChange={(e) => setJoinMeetingId(e.target.value)}
@@ -261,7 +277,7 @@ const Dashboard = () => {
                         
                         {/* Delete Button */}
                         <button
-                          onClick={() => handleDeleteMeeting(meeting._id)}
+                          onClick={() => handleDeleteMeeting(meeting.meetingId)}
                           className="bg-white text-black border-2 border-black px-3 py-2 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-all duration-200 shadow-soft hover:shadow-medium"
                           title="Delete Meeting"
                         >

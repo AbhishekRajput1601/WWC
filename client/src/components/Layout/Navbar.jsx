@@ -14,7 +14,7 @@ const Navbar = () => {
   return (
     <nav className="bg-white/95 backdrop-blur-sm border-b border-neutral-200 sticky top-0 z-50 shadow-soft">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between h-20">
           <div className="flex items-center">
             <Link to="/" className="flex-shrink-0 flex items-center group">
               <div className="h-10 w-10 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-xl flex items-center justify-center shadow-soft group-hover:shadow-medium transition-all duration-200 group-hover:scale-105">
@@ -30,12 +30,21 @@ const Navbar = () => {
           <div className="flex items-center space-x-6">
             {isAuthenticated ? (
               <>
-                <Link
-                  to="/dashboard"
-                  className="text-neutral-600 hover:text-wwc-600 px-3 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 hover:bg-wwc-50"
-                >
-                  Dashboard
-                </Link>
+                { user?.name === 'admin' ? (
+                  <Link
+                    to="/admin-dashboard"
+                    className="text-neutral-600 hover:text-wwc-600 px-3 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 hover:bg-wwc-50"
+                  >
+                    Admin Dashboard
+                  </Link>
+                ) : (
+                  <Link
+                    to="/dashboard"
+                    className="text-neutral-600 hover:text-wwc-600 px-3 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 hover:bg-wwc-50"
+                  >
+                    Dashboard
+                  </Link>
+                )}
                 <div className="flex items-center space-x-4">
                   <div className="hidden sm:block">
                     <span className="text-neutral-700 text-sm font-medium">

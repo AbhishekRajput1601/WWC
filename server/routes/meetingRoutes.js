@@ -5,7 +5,9 @@ import {
   leaveMeeting,
   endMeeting,
   getMeeting,
-  getUserMeetings
+  getUserMeetings,
+  addUserInMeeting,
+  deleteMeeting
 } from '../controllers/meetingController.js';
 import { protect } from '../middleware/auth.js';
 
@@ -21,5 +23,8 @@ router.get('/:meetingId', getMeeting);
 router.post('/:meetingId/join', joinMeeting);
 router.post('/:meetingId/leave', leaveMeeting);
 router.post('/:meetingId/end', endMeeting);
+router.post('/add-user-in-meeting', addUserInMeeting);
+router.delete('/delete-meeting/:meetingId', deleteMeeting);
+
 
 export default router;
