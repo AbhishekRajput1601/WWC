@@ -8,6 +8,7 @@ import AdminDashboard from './pages/AdminDashboard'
 import MeetingRoom from './pages/MeetingRoom'
 import Login from './components/Auth/Login'
 import Signup from './components/Auth/Signup'
+import UserProfile from './components/UserProfile'
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/meeting/:meetingId" element={<MeetingRoom />} />
+              <Route path="/profile" element={<UserProfile />} />
           </Routes>
         </div>
       </Router>

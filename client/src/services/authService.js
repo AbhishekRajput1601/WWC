@@ -1,10 +1,23 @@
 import api from '../utils/api.js';
 
-/**
- * Authentication Service
- * Handles all authentication-related API requests
- */
 class AuthService {
+  /**
+   * Update user details
+   * @param {Object} details - User details to update
+   * @returns {Promise<Object>} Update response
+   */
+  async updateUserDetails(details) {
+    try {
+      const response = await api.post('/auth/update-details', details);
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to update user details',
+        error: error.response?.data || error.message
+      };
+    }
+  }
   /**
    * Register a new user
    * @param {Object} userData - User registration data

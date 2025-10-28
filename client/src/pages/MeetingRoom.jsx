@@ -1,4 +1,5 @@
 import React, { useState, useEffect, Suspense } from "react";
+import meetingService from "../services/meetingService";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -26,6 +27,37 @@ const MeetingRoom = () => {
   const localVideoRef = React.useRef(null);
   // Media stream state
   const [mediaStream, setMediaStream] = useState(null);
+
+  // End meeting state
+  const [endingMeeting, setEndingMeeting] = useState(false);
+  const [meetingEnded, setMeetingEnded] = useState(false);
+  const [endMeetingError, setEndMeetingError] = useState("");
+  // End Meeting handler
+  const handleEndMeeting = async () => {
+    setEndingMeeting(true);
+    setEndMeetingError("");
+    try {
+      const result = await meetingService.endMeeting(meetingId);
+      if (result.success) {
+        setMeetingEnded(true);
+        // Optionally update meeting status in state
+        setMeeting(result.meeting);
+        // Stop media tracks
+        if (mediaStream) {
+          mediaStream.getTracks().forEach(track => track.stop());
+        }
+        // Redirect after short delay
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 2000);
+      } else {
+        setEndMeetingError(result.message || "Failed to end meeting.");
+      }
+    } catch (err) {
+      setEndMeetingError("Failed to end meeting.");
+    }
+    setEndingMeeting(false);
+  };
 
   // No dummy participants
 
@@ -151,8 +183,20 @@ const MeetingRoom = () => {
     );
   }
 
+  if (meetingEnded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-wwc-50 via-white to-accent-50">
+        <div className="bg-white/90 rounded-2xl shadow-medium p-8 text-center">
+          <h2 className="text-2xl font-bold text-success-700 mb-4">Meeting Ended</h2>
+          <p className="text-neutral-700 mb-2">The meeting has been successfully ended.</p>
+          <p className="text-neutral-500 text-sm">Redirecting to dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-  <div className="min-h-screen bg-gradient-to-br from-wwc-50 via-white to-accent-50 overflow-hidden relative">
+    <div className="min-h-screen bg-gradient-to-br from-wwc-50 via-white to-accent-50 overflow-hidden relative">
       {/* Meeting Header - Fixed Top Bar */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm border-b border-neutral-200 px-6 py-4 shadow-soft">
         <div className="flex items-center justify-between">
@@ -194,7 +238,7 @@ const MeetingRoom = () => {
               <svg className="w-6 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.196-2.121M9 6a3 3 0 106 0 3 3 0 00-6 0zM7 20a3 3 0 015.196-2.121M15 6a3 3 0 106 0 3 3 0 00-6 0z" />
               </svg>
-              <span>All Users</span>
+              <span>Participants</span>
             </button>
             <button
               onClick={() => setActivePanel(activePanel === 'chat' ? null : 'chat')}
@@ -422,6 +466,18 @@ const MeetingRoom = () => {
               />
             </svg>
           </button>
+          {/* End Meeting Button */}
+          <button
+            onClick={handleEndMeeting}
+            disabled={endingMeeting}
+            className="px-5 py-2 rounded-xl font-bold bg-error-600 text-white shadow-soft border-2 border-error-700 hover:bg-error-700 transition-all duration-200"
+            title="End Meeting"
+          >
+            {endingMeeting ? "Ending..." : "End Meeting"}
+          </button>
+          {endMeetingError && (
+            <span className="text-error-600 ml-4 font-semibold">{endMeetingError}</span>
+          )}
         </div>
       </div>
     </div>

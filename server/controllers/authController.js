@@ -1,5 +1,4 @@
 import User from '../models/User.js';
-import Meeting from '../models/Meeting.js';
 import { generateToken } from '../utils/tokenUtils.js';
 import logger from '../utils/logger.js';
 
@@ -151,6 +150,7 @@ export const getMe = async (req, res) => {
         name: user.name,
         email: user.email,
         preferences: user.preferences,
+        role: user.role,
       },
     });
   } catch (error) {
@@ -166,6 +166,7 @@ export const getMe = async (req, res) => {
 export const updateUserDetails = async (req, res) => {
   try {
     const { userId, name, email, role } = req.body;
+    console.log("Update details for userId:", userId, name, email, role);
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({

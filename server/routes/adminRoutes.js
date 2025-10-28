@@ -18,5 +18,4 @@ router.get('/users-meetings', protect, getAllUsersMeetings);
 router.get('/meetings-users', protect, getAllUserInMeetings);
 
 
-
 export default router;

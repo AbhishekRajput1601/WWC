@@ -153,7 +153,6 @@ class MeetingService {
   async deleteMeeting(meetingId) {
     try {
       const response = await api.delete(`/meetings/${meetingId}`);
-      
       return {
         success: true,
         data: response.data
@@ -162,6 +161,28 @@ class MeetingService {
       return {
         success: false,
         message: error.response?.data?.message || 'Failed to delete meeting',
+        error: error.response?.data || error.message
+      };
+    }
+  }
+
+  /**
+   * End a meeting
+   * @param {string} meetingId - Meeting ID to end
+   * @returns {Promise<Object>} End meeting response
+   */
+  async endMeeting(meetingId) {
+    try {
+      const response = await api.post(`/meetings/${meetingId}/end`);
+      return {
+        success: true,
+        data: response.data,
+        meeting: response.data.meeting
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to end meeting',
         error: error.response?.data || error.message
       };
     }

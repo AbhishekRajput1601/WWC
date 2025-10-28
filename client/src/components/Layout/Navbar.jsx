@@ -51,6 +51,19 @@ const Navbar = () => {
                       Welcome, <span className="text-wwc-600 font-semibold">{user?.name}</span>
                     </span>
                   </div>
+                    {/* User avatar/logo for profile */}
+                    <Link to="/profile" className="flex items-center group">
+                      <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center shadow-soft group-hover:shadow-medium transition-all duration-200 group-hover:scale-105 mr-2">
+                        {/* If user has avatar, show it, else show initials */}
+                        {user?.avatarUrl ? (
+                          <img src={user.avatarUrl} alt="avatar" className="h-10 w-10 rounded-full object-cover" />
+                        ) : (
+                          <span className="text-neutral-700 font-bold text-lg">
+                            {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                          </span>
+                        )}
+                      </div>
+                    </Link>
                   <button
                     onClick={handleLogout}
                     className="border-2 border-black bg-white text-black hover:bg-gray-200 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 shadow-soft hover:shadow-medium transform hover:-translate-y-0.5"

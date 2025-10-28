@@ -32,7 +32,7 @@ export const updatePreferences = async (req, res) => {
 
 export const getAllUser = async (req, res) => {
   try {
-    const users = await User.find({});
+    const users = await User.find({}).select('-password');
     res.json({
       success: true,
       users
@@ -76,7 +76,9 @@ export const getAllUsersMeetings = async (req, res) => {
 
 export const getAllUserInMeetings = async (req, res) => {
   try {
-    const meetings = await Meeting.find().populate('participants.user', '-password');
+    const meetings = await Meeting.find()
+      .populate('host', 'name email')
+      .populate('participants.user', '-password');
     res.status(200).json({
       success: true,
       data: meetings
