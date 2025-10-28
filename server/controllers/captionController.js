@@ -1,9 +1,7 @@
 import Caption from '../models/Caption.js';
 import logger from '../utils/logger.js';
 
-// @desc    Get captions for a meeting
-// @route   GET /api/captions/:meetingId
-// @access  Private
+
 export const getMeetingCaptions = async (req, res) => {
   try {
     const { meetingId } = req.params;
@@ -43,9 +41,7 @@ export const getMeetingCaptions = async (req, res) => {
   }
 };
 
-// @desc    Export captions as text file
-// @route   GET /api/captions/:meetingId/export
-// @access  Private
+
 export const exportCaptions = async (req, res) => {
   try {
     const { meetingId } = req.params;
