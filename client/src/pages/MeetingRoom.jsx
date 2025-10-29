@@ -1,13 +1,13 @@
 import React, { useState, useEffect, Suspense, useRef } from "react";
-import Controlbar from "./Controlbar";
-import Meetingheaderbar from "./Meetingheaderbar";
+import Controlbar from "../components/Layout/Controlbar.jsx";
+import Meetingheaderbar from "../components/Layout/Meetingheaderbar.jsx";
 import io from "socket.io-client";
 import meetingService from "../services/meetingService";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const Chat = React.lazy(() => import("./Chat.jsx"));
-const AllUsers = React.lazy(() => import("./AllUsers.jsx"));
+const AllUsers = React.lazy(() => import("./Participants.jsx"));
 
 const SOCKET_SERVER_URL =
   import.meta.env.VITE_SOCKET_SERVER_URL || "http://localhost:5000";
@@ -90,9 +90,20 @@ const MeetingRoom = () => {
   };
   const toggleVideo = () => {
     if (mediaStream) {
-      mediaStream.getVideoTracks().forEach((track) => {
-        track.enabled = !isVideoOn;
-      });
+      const videoTracks = mediaStream.getVideoTracks();
+      if (videoTracks.length > 0) {
+        videoTracks.forEach((track) => {
+          track.enabled = !isVideoOn;
+        });
+      }
+      // Always restore srcObject if turning on
+      if (!isVideoOn && localVideoRef.current) {
+        localVideoRef.current.srcObject = mediaStream;
+      }
+      // Always clear srcObject if turning off
+      if (isVideoOn && localVideoRef.current) {
+        localVideoRef.current.srcObject = null;
+      }
     }
     setIsVideoOn((prev) => !prev);
   };
@@ -448,99 +459,109 @@ const MeetingRoom = () => {
       />
 
       <div className="flex-1 flex mt-20">
-        {/* Main Video Area - local and remote videos */}
-        <div
-          className="flex-1 flex items-center justify-center"
-          style={{ minHeight: "calc(100vh - 96px - 72px)" }}
-        >
-          <div className="w-full h-full flex items-center justify-center">
-            {/* Local video - Big Screen Perfectly Centered */}
-            <div className="flex flex-col items-center justify-center w-full max-w-5xl mx-auto h-full relative">
-              <video
-                ref={localVideoRef}
-                autoPlay
-                muted
-                playsInline
-                className="w-full h-[80vh] object-cover rounded-2xl bg-black shadow-xl border-4 border-white"
-                style={{ maxHeight: "80vh", minHeight: "500px" }}
-              />
-              <div className="absolute bottom-6 right-8">
-                <span className="px-4 py-2 bg-white/80 rounded-xl text-lg font-bold text-neutral-900 shadow-lg border border-neutral-300">
-                  {user?.name || "You"} (You)
-                </span>
-              </div>
-              {/* LIVE and Mic status inside user div */}
-              <div className="absolute top-4 right-4 flex flex-col items-end space-y-3">
-                <div className="bg-error-500 text-black px-4 py-2 rounded-full text-sm font-bold flex items-center space-x-2 shadow-lg">
-                  <div className="w-3 h-3 rounded-full animate-pulse"></div>
-                  <span>LIVE</span>
+        {/* Split layout: left for video, right for panel */}
+        <div className="flex w-full h-[calc(100vh-96px-72px)]">
+          {/* Left: Video Call */}
+          <div className="flex-1 flex items-center justify-center bg-transparent h-full">
+            <div className="w-[1100px] h-[560px] flex items-center justify-center">
+              {/* Local video - Big Screen Perfectly Centered */}
+              <div className="flex flex-col items-center justify-center w-full max-w-5xl mx-auto h-full relative">
+                {isVideoOn ? (
+                  <video
+                    ref={localVideoRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    className="w-full h-[80vh] object-cover rounded-2xl bg-black shadow-xl border-4 border-white"
+                    style={{ maxHeight: "80vh", minHeight: "500px" }}
+                  />
+                ) : (
+                  <div className="w-full h-[80vh] min-h-[500px] flex items-center justify-center rounded-2xl bg-black shadow-xl border-4 border-white">
+                    <div className="w-32 h-32 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-full flex items-center justify-center">
+                      <span className="text-white font-bold text-6xl">{user?.name?.[0] || "U"}</span>
+                    </div>
+                  </div>
+                )}
+                <div className="absolute bottom-6 right-8">
+                  <span className="px-4 py-2 bg-white/80 rounded-xl text-lg font-bold text-neutral-900 shadow-lg border border-neutral-300">
+                    {user?.name || "You"} (You)
+                  </span>
                 </div>
-                <div
-                  className={`px-4 py-2 rounded-full text-sm font-bold flex items-center space-x-2 shadow-lg ${
-                    isMuted
-                      ? "bg-neutral-300 text-neutral-700"
-                      : "bg-success-100 text-success-700"
-                  }`}
-                >
-                  {isMuted ? (
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 19V21a3 3 0 006 0v-2M5 10v2a7 7 0 0014 0v-2M9 5a3 3 0 016 0v6a3 3 0 01-6 0V5zm-4 4l16 16"
-                      />
-                    </svg>
-                  ) : (
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 1v22m6-6a6 6 0 01-12 0V7a6 6 0 0112 0v10z"
-                      />
-                    </svg>
-                  )}
-                  <span>{isMuted ? "Mic Muted" : "Mic On"}</span>
+                {/* LIVE and Mic status inside user div */}
+                <div className="absolute top-4 right-4 flex flex-col items-end space-y-3">
+                  <div className="bg-error-500 text-black px-4 py-2 rounded-full text-sm font-bold flex items-center space-x-2 shadow-lg">
+                    <div className="w-3 h-3 rounded-full animate-pulse"></div>
+                    <span>LIVE</span>
+                  </div>
+                  <div
+                    className={`px-4 py-2 rounded-full text-sm font-bold flex items-center space-x-2 shadow-lg ${
+                      isMuted
+                        ? "bg-neutral-300 text-neutral-700"
+                        : "bg-success-100 text-success-700"
+                    }`}
+                  >
+                    {isMuted ? (
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 19V21a3 3 0 006 0v-2M5 10v2a7 7 0 0014 0v-2M9 5a3 3 0 016 0v6a3 3 0 01-6 0V5zm-4 4l16 16"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 1v22m6-6a6 6 0 01-12 0V7a6 6 0 0112 0v10z"
+                        />
+                      </svg>
+                    )}
+                    <span>{isMuted ? "Mic Muted" : "Mic On"}</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          {/* ...existing code... */}
+            {/* ...existing code... */}
 
-          {showCaptions && currentCaption && (
-            <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 max-w-2xl">
-              <div className="bg-white/95 backdrop-blur-md text-neutral-900 px-6 py-3 rounded-2xl border border-neutral-200 shadow-medium">
-                <p className="text-center font-medium">{currentCaption}</p>
+            {showCaptions && currentCaption && (
+              <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 max-w-2xl">
+                <div className="bg-white/95 backdrop-blur-md text-neutral-900 px-6 py-3 rounded-2xl border border-neutral-200 shadow-medium">
+                  <p className="text-center font-medium">{currentCaption}</p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+          {/* Right: Panel (Chat or Participants) */}
+         
+            {activePanel === "chat" && (
+              <Suspense fallback={<div>Loading Chat...</div>}>
+                <Chat />
+              </Suspense>
+            )}
+            {activePanel === "users" && (
+              <Suspense fallback={<div>Loading Users...</div>}>
+                <AllUsers
+                  user={user}
+                  isMuted={isMuted}
+                  participants={participants}
+                />
+              </Suspense>
+            )}
+        
         </div>
-        {/* Conditionally render Chat or AllUsers panel */}
-        {activePanel === "chat" && (
-          <Suspense fallback={<div>Loading Chat...</div>}>
-            <Chat />
-          </Suspense>
-        )}
-        {activePanel === "users" && (
-          <Suspense fallback={<div>Loading Users...</div>}>
-            <AllUsers
-              user={user}
-              isMuted={isMuted}
-              participants={participants}
-            />
-          </Suspense>
-        )}
       </div>
 
       {/* Control Bar */}
@@ -561,6 +582,6 @@ const MeetingRoom = () => {
       />
     </div>
   );
-};
+}
 
 export default MeetingRoom;
