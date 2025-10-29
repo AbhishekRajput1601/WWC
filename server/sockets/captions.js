@@ -3,22 +3,18 @@ import logger from '../utils/logger.js';
 
 export const setupCaptions = (io) => {
   io.on('connection', (socket) => {
-    
-    // Start captions for a meeting
+   
     socket.on('start-captions', ({ meetingId, language = 'en' }) => {
       logger.info(`Starting captions for meeting ${meetingId} in language ${language}`);
       
-      // Join captions room
       socket.join(`captions-${meetingId}`);
       
-      // Notify others that captions have started
       socket.to(meetingId).emit('captions-started', {
         socketId: socket.id,
         language
       });
     });
 
-    // Receive audio data for transcription
     socket.on('audio-data', async ({ meetingId, audioData, userId, language = 'en' }) => {
       try {
         // In a real implementation, you would:

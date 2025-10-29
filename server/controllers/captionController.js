@@ -1,5 +1,28 @@
 import Caption from '../models/Caption.js';
 import logger from '../utils/logger.js';
+import { transcribeAudio } from '../services/captionsWhisperService.js';
+import fs from 'fs';
+
+export const transcribeAudioHandler = async (req, res) => {
+  try {
+    if (!req.files || !req.files.audio) {
+      return res.status(400).json({ success: false, message: 'No audio file uploaded.' });
+    }
+    const audioFile = req.files.audio;
+    const tempPath = `temp_${Date.now()}_${audioFile.name}`;
+    await audioFile.mv(tempPath);
+
+    const language = req.body.language || null;
+    const translate = req.body.translate === 'true';
+    const result = await transcribeAudio(tempPath, language, translate);
+
+    fs.unlinkSync(tempPath);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    logger.error('Whisper transcription error:', error);
+    res.status(500).json({ success: false, message: 'Transcription failed', error });
+  }
+};
 
 
 export const getMeetingCaptions = async (req, res) => {
@@ -8,8 +31,7 @@ export const getMeetingCaptions = async (req, res) => {
     const { language, limit = 50, page = 1 } = req.query;
 
     let query = { meetingId };
-    
-    // If language filter is specified
+  
     if (language && language !== 'all') {
       query.$or = [
         { originalLanguage: language },

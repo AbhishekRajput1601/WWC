@@ -8,6 +8,8 @@ import authRoutes from './routes/authRoutes.js';
 import meetingRoutes from './routes/meetingRoutes.js';
 import captionRoutes from './routes/captionRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import whisperRoutes from './routes/whisperRoutes.js';
+import fileUpload from 'express-fileupload';
 import { setupSignaling } from './sockets/signaling.js';
 import { setupCaptions } from './sockets/captions.js';
 
@@ -32,12 +34,15 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(fileUpload());
 
 // Routes
+
 app.use('/api/auth', authRoutes);
 app.use('/api/meetings', meetingRoutes);
 app.use('/api/captions', captionRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/whisper', whisperRoutes);
 
 
 // Socket.IO setup

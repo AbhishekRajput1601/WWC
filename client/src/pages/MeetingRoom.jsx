@@ -1,4 +1,5 @@
 import React, { useState, useEffect, Suspense, useRef } from "react";
+import axios from "axios";
 import Controlbar from "../components/Layout/Controlbar.jsx";
 import Meetingheaderbar from "../components/Layout/Meetingheaderbar.jsx";
 import io from "socket.io-client";
@@ -34,6 +35,8 @@ const MeetingRoom = () => {
   const [showCaptions, setShowCaptions] = useState(false);
   const [currentCaption, setCurrentCaption] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState("en");
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
   const [activePanel, setActivePanel] = useState(null); // 'chat' | 'users' | null
   const [isScreenSharing, setIsScreenSharing] = useState(false);
 
@@ -107,7 +110,78 @@ const MeetingRoom = () => {
     }
     setIsVideoOn((prev) => !prev);
   };
-  const toggleCaptions = () => setShowCaptions(!showCaptions);
+  const toggleCaptions = () => {
+    setShowCaptions((prev) => !prev);
+  };
+  // Real-time audio recording and caption fetching
+  useEffect(() => {
+    let intervalId;
+    if (showCaptions && mediaStream) {
+      // Only record audio
+      const audioStream = new MediaStream(mediaStream.getAudioTracks());
+      let mimeType = '';
+      if (MediaRecorder.isTypeSupported('audio/wav')) {
+        mimeType = 'audio/wav';
+      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+        mimeType = 'audio/webm';
+      } else {
+        mimeType = '';
+      }
+      const mediaRecorder = new window.MediaRecorder(audioStream, mimeType ? { mimeType } : undefined);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType || 'audio/webm' });
+        console.log('Audio blob size:', audioBlob.size, 'bytes');
+        audioChunksRef.current = [];
+        // Send audioBlob to backend for transcription
+        const formData = new FormData();
+        formData.append('audio', audioBlob, mimeType === 'audio/wav' ? 'audio.wav' : 'audio.webm');
+        formData.append('language', selectedLanguage);
+        formData.append('translate', 'true');
+        try {
+          const token = localStorage.getItem('token');
+          const res = await axios.post('/api/whisper/transcribe', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+          });
+          if (res.data && res.data.captions && res.data.captions.length > 0) {
+            // Show last segment
+            setCurrentCaption(res.data.captions[res.data.captions.length - 1].text);
+          } else {
+            setCurrentCaption('');
+            console.error('No captions returned:', res.data);
+          }
+        } catch (err) {
+          setCurrentCaption('');
+          console.error('Caption error:', err);
+        }
+      };
+
+      mediaRecorder.start();
+      intervalId = setInterval(() => {
+        if (mediaRecorder.state === 'recording') {
+          mediaRecorder.stop();
+          mediaRecorder.start();
+        }
+      }, 6000); // every 6 seconds
+    }
+    return () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+      clearInterval(intervalId);
+    };
+  }, [showCaptions, mediaStream, selectedLanguage]);
   // Screen sharing logic
   const screenStreamRef = useRef(null);
   const toggleScreenShare = async () => {
@@ -458,7 +532,7 @@ const MeetingRoom = () => {
         user={user}
       />
 
-      <div className="flex-1 flex mt-16">
+      <div className="flex-1 flex mt-20">
         {/* Split layout: left for video, right for panel */}
         <div className="flex w-full h-[calc(100vh-96px-72px)]">
           {/* Left: Video Call */}
