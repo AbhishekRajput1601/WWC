@@ -458,7 +458,7 @@ const MeetingRoom = () => {
         user={user}
       />
 
-      <div className="flex-1 flex mt-20">
+      <div className="flex-1 flex mt-16">
         {/* Split layout: left for video, right for panel */}
         <div className="flex w-full h-[calc(100vh-96px-72px)]">
           {/* Left: Video Call */}

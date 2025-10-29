@@ -52,7 +52,6 @@ export const joinMeeting = async (req, res) => {
       });
     }
 
-    // Check if meeting is active or can be started
     if (meeting.status === 'ended') {
       return res.status(400).json({
         success: false,
@@ -60,20 +59,17 @@ export const joinMeeting = async (req, res) => {
       });
     }
 
-    // Check if user is already a participant
     const existingParticipant = meeting.participants.find(
       p => p.user.toString() === req.user.id && p.isActive
     );
 
     if (!existingParticipant) {
-      // Add user as participant
       meeting.participants.push({
         user: req.user.id,
         joinedAt: new Date(),
         isActive: true,
       });
 
-      // If this is the host joining and meeting is scheduled, start it
       if (meeting.host.toString() === req.user.id && meeting.status === 'scheduled') {
         meeting.status = 'active';
         meeting.startTime = new Date();
@@ -114,7 +110,11 @@ export const leaveMeeting = async (req, res) => {
       });
     }
 
-    // Find and update participant
+    meeting.participants = meeting.participants.filter(
+      p => p.user.toString() !== req.user.id
+    );
+    await meeting.save();
+
     const participant = meeting.participants.find(
       p => p.user.toString() === req.user.id && p.isActive
     );
@@ -153,7 +153,6 @@ export const endMeeting = async (req, res) => {
       });
     }
 
-    // Check if user is the host
     if (meeting.host.toString() !== req.user.id) {
       return res.status(403).json({
         success: false,
@@ -164,7 +163,6 @@ export const endMeeting = async (req, res) => {
     meeting.status = 'ended';
     meeting.endTime = new Date();
 
-    // Mark all active participants as inactive
     meeting.participants.forEach(participant => {
       if (participant.isActive) {
         participant.isActive = false;

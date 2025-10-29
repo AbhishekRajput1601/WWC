@@ -8,7 +8,7 @@ import AdminDashboard from './pages/AdminDashboard'
 import MeetingRoom from './pages/MeetingRoom'
 import Login from './components/Auth/Login'
 import Signup from './components/Auth/Signup'
-import UserProfile from './components/UserProfile'
+import UserProfile from './components/Auth/UserProfile'
 
 function App() {
   return (

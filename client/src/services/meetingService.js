@@ -1,9 +1,5 @@
 import api from '../utils/api.js';
 
-/**
- * Meeting Service
- * Handles all meeting-related API requests
- */
 class MeetingService {
   /**
    * Create a new meeting
@@ -32,7 +28,6 @@ class MeetingService {
   }
 
   /**
-   * Get user's meetings
    * @returns {Promise<Object>} Meetings list response
    */
   async getMeetings() {
