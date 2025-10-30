@@ -9,7 +9,6 @@ export const setupSignaling = (io) => {
   io.on('connection', (socket) => {
     logger.info(`Socket connected: ${socket.id}`);
 
-    // Join meeting room
     socket.on('join-meeting', ({ meetingId, userId, userName }) => {
       logger.info(`User ${userName} (${userId}) joining meeting: ${meetingId}`);
       
@@ -22,17 +21,14 @@ export const setupSignaling = (io) => {
       }
       activeMeetings.get(meetingId).add(socket.id);
 
-      // Notify others in the meeting about new participant
       socket.to(meetingId).emit('user-joined', {
         userId,
         userName,
         socketId: socket.id
       });
 
-      // Send ICE servers configuration
       socket.emit('ice-servers', turnConfig);
 
-      // Send existing participants to new user
       const existingParticipants = [];
       activeMeetings.get(meetingId).forEach(socketId => {
         if (socketId !== socket.id) {
@@ -50,7 +46,6 @@ export const setupSignaling = (io) => {
       socket.emit('existing-participants', existingParticipants);
     });
 
-    // WebRTC Signaling
     socket.on('offer', ({ offer, targetSocketId }) => {
       logger.debug(`Offer from ${socket.id} to ${targetSocketId}`);
       socket.to(targetSocketId).emit('offer', {
@@ -75,7 +70,6 @@ export const setupSignaling = (io) => {
       });
     });
 
-    // Media control events
     socket.on('toggle-audio', ({ isEnabled }) => {
       const meetingId = socketToMeeting.get(socket.id);
       if (meetingId) {
@@ -96,7 +90,6 @@ export const setupSignaling = (io) => {
       }
     });
 
-    // Screen sharing
     socket.on('start-screen-share', () => {
       const meetingId = socketToMeeting.get(socket.id);
       if (meetingId) {
@@ -115,12 +108,10 @@ export const setupSignaling = (io) => {
       }
     });
 
-    // Leave meeting
     socket.on('leave-meeting', () => {
       handleUserLeave(socket);
     });
 
-    // Handle disconnect
     socket.on('disconnect', () => {
       logger.info(`Socket disconnected: ${socket.id}`);
       handleUserLeave(socket);
@@ -132,7 +123,7 @@ export const setupSignaling = (io) => {
     const user = socketToUser.get(socket.id);
 
     if (meetingId && user) {
-      // Remove from active meetings
+
       if (activeMeetings.has(meetingId)) {
         activeMeetings.get(meetingId).delete(socket.id);
         if (activeMeetings.get(meetingId).size === 0) {
@@ -140,14 +131,14 @@ export const setupSignaling = (io) => {
         }
       }
 
-      // Notify others in the meeting
+  
       socket.to(meetingId).emit('user-left', {
         socketId: socket.id,
         userId: user.id,
         userName: user.name
       });
 
-      // Cleanup
+
       socketToMeeting.delete(socket.id);
       socketToUser.delete(socket.id);
 

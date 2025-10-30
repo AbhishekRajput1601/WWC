@@ -2,7 +2,6 @@ import User from '../models/User.js';
 import { verifyToken } from '../utils/tokenUtils.js';
 import logger from '../utils/logger.js';
 
-// Protect routes
 export const protect = async (req, res, next) => {
   let token;
 
@@ -10,11 +9,10 @@ export const protect = async (req, res, next) => {
     req.headers.authorization &&
     req.headers.authorization.startsWith('Bearer')
   ) {
-    // Set token from Bearer token in header
+
     token = req.headers.authorization.split(' ')[1];
   }
 
-  // Make sure token exists
   if (!token) {
     return res.status(401).json({
       success: false,
@@ -23,9 +21,8 @@ export const protect = async (req, res, next) => {
   }
 
   try {
-    // Verify token
+  
     const decoded = verifyToken(token);
-    // Get user from token
     req.user = await User.findById(decoded.id);
 
     if (!req.user) {

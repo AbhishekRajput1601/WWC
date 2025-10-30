@@ -8,7 +8,7 @@ ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 const WHISPER_URL = process.env.WHISPER_URL || 'http://localhost:5005/transcribe';
 
 export async function transcribeAudio(filePath, language = null, translate = false) {
-  // Always use a unique output filename to avoid in-place editing
+
   const ext = filePath.split('.').pop().toLowerCase();
   let wavPath;
   if (ext === 'wav') {

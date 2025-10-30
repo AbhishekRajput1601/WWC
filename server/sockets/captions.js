@@ -17,19 +17,10 @@ export const setupCaptions = (io) => {
 
     socket.on('audio-data', async ({ meetingId, audioData, userId, language = 'en' }) => {
       try {
-        // In a real implementation, you would:
-        // 1. Convert audioData to appropriate format
-        // 2. Send to speech-to-text service (Google, Azure, etc.)
-        // 3. Get transcription result
-        // 4. Save to database
-        // 5. Broadcast to meeting participants
 
-        // For now, we'll simulate this with a placeholder
-        // This is where you'd integrate with actual ASR services
         const mockTranscription = await simulateTranscription(audioData);
         
         if (mockTranscription && mockTranscription.text) {
-          // Save caption to database
           const caption = await Caption.create({
             meetingId,
             speaker: userId,
@@ -38,8 +29,6 @@ export const setupCaptions = (io) => {
             confidence: mockTranscription.confidence || 0.8,
             isFinal: mockTranscription.isFinal || false
           });
-
-          // Broadcast caption to meeting participants
           io.to(meetingId).emit('new-caption', {
             captionId: caption._id,
             text: mockTranscription.text,
@@ -57,7 +46,7 @@ export const setupCaptions = (io) => {
       }
     });
 
-    // Request translation of a caption
+
     socket.on('request-translation', async ({ captionId, targetLanguage }) => {
       try {
         const caption = await Caption.findById(captionId);
@@ -65,7 +54,7 @@ export const setupCaptions = (io) => {
           return;
         }
 
-        // Check if translation already exists
+
         const existingTranslation = caption.translations.find(
           t => t.language === targetLanguage
         );
@@ -80,10 +69,8 @@ export const setupCaptions = (io) => {
           return;
         }
 
-        // Simulate translation (in real implementation, use Google Translate API, etc.)
         const translatedText = await simulateTranslation(caption.originalText, targetLanguage);
-        
-        // Save translation
+
         caption.translations.push({
           language: targetLanguage,
           text: translatedText,
@@ -91,7 +78,6 @@ export const setupCaptions = (io) => {
         });
         await caption.save();
 
-        // Send translation result
         socket.emit('translation-result', {
           captionId,
           language: targetLanguage,
@@ -104,7 +90,6 @@ export const setupCaptions = (io) => {
       }
     });
 
-    // Stop captions
     socket.on('stop-captions', ({ meetingId }) => {
       socket.leave(`captions-${meetingId}`);
       socket.to(meetingId).emit('captions-stopped', {
@@ -114,16 +99,10 @@ export const setupCaptions = (io) => {
   });
 };
 
-// Simulate speech-to-text transcription
-// In a real implementation, replace this with actual ASR service
+
 const simulateTranscription = async (audioData) => {
-  // This is a placeholder - in real implementation:
-  // 1. Convert audio buffer to appropriate format (WAV, FLAC, etc.)
-  // 2. Send to ASR service (Google Cloud Speech-to-Text, Azure Speech, etc.)
-  // 3. Return actual transcription result
-  
-  // For demo purposes, return mock transcription
-  if (Math.random() > 0.7) { // Simulate 30% transcription rate
+
+  if (Math.random() > 0.7) {
     const mockPhrases = [
       "Hello everyone, welcome to the meeting",
       "Can you hear me clearly?",
@@ -143,12 +122,8 @@ const simulateTranscription = async (audioData) => {
   return null;
 };
 
-// Simulate translation
-// In a real implementation, replace this with actual translation service
 const simulateTranslation = async (text, targetLanguage) => {
-  // This is a placeholder - in real implementation:
-  // Use Google Translate API, Azure Translator, etc.
-  
+ 
   const translations = {
     'es': { // Spanish
       "Hello everyone, welcome to the meeting": "Hola a todos, bienvenidos a la reunión",
@@ -172,5 +147,5 @@ const simulateTranslation = async (text, targetLanguage) => {
     return translations[targetLanguage][text];
   }
 
-  return `[${targetLanguage}] ${text}`; // Fallback
+  return `[${targetLanguage}] ${text}`; 
 };

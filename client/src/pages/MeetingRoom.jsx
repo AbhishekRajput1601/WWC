@@ -146,6 +146,7 @@ const MeetingRoom = () => {
         formData.append('audio', audioBlob, mimeType === 'audio/wav' ? 'audio.wav' : 'audio.webm');
         formData.append('language', selectedLanguage);
         formData.append('translate', 'true');
+        formData.append('meetingId', meetingId); // <-- Ensure meetingId is sent
         try {
           const token = localStorage.getItem('token');
           const res = await axios.post('/api/whisper/transcribe', formData, {
@@ -610,10 +611,14 @@ const MeetingRoom = () => {
             </div>
             {/* ...existing code... */}
 
-            {showCaptions && currentCaption && (
-              <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 max-w-2xl">
-                <div className="bg-white/95 backdrop-blur-md text-neutral-900 px-6 py-3 rounded-2xl border border-neutral-200 shadow-medium">
-                  <p className="text-center font-medium">{currentCaption}</p>
+            {showCaptions && (
+              <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 max-w-2xl z-50">
+                <div className="bg-white/95 backdrop-blur-md text-neutral-900 px-6 py-3 rounded-2xl border border-neutral-200 shadow-medium min-h-[48px] flex items-center justify-center">
+                  <p className="text-center font-medium">
+                    {currentCaption
+                      ? currentCaption
+                      : <span className="text-neutral-400 italic">Listening...</span>}
+                  </p>
                 </div>
               </div>
             )}
