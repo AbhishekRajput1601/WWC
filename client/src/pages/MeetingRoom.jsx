@@ -145,7 +145,7 @@ const MeetingRoom = () => {
         const formData = new FormData();
         formData.append('audio', audioBlob, mimeType === 'audio/wav' ? 'audio.wav' : 'audio.webm');
         formData.append('language', selectedLanguage);
-        formData.append('translate', 'true');
+        formData.append('translate', selectedLanguage !== 'en' ? 'true' : 'false');
         formData.append('meetingId', meetingId); // <-- Ensure meetingId is sent
         try {
           const token = localStorage.getItem('token');

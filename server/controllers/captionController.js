@@ -14,7 +14,8 @@ export const transcribeAudioHandler = async (req, res) => {
   await audioFile.mv(tempPath);
 
     const language = req.body.language || null;
-    const translate = req.body.translate === 'true';
+  // Always transcribe, never use Whisper's translate
+  const translate = false;
     // Try to get meetingId from body, query, or headers (FormData can be tricky)
     let meetingId = req.body.meetingId || req.query.meetingId || req.headers['x-meeting-id'];
     if (!meetingId && req.body && typeof req.body === 'object') {
@@ -27,9 +28,47 @@ export const transcribeAudioHandler = async (req, res) => {
       }
     }
     const speaker = req.user?._id;
-    const result = await transcribeAudio(tempPath, language, translate);
-
+  const result = await transcribeAudio(tempPath, language, translate);
     fs.unlinkSync(tempPath);
+
+    // LibreTranslate integration
+    let translatedCaptions = [];
+    if (language && language !== 'en' && result.captions && Array.isArray(result.captions)) {
+      try {
+        const axios = (await import('axios')).default;
+        for (const segment of result.captions) {
+          let translatedText = '';
+          let attempts = 0;
+          while (attempts < 3 && !translatedText) {
+            try {
+              const translationRes = await axios.post('https://libretranslate.de/translate', {
+                q: segment.text,
+                source: 'en',
+                target: language,
+                format: 'text'
+              });
+              translatedText = translationRes.data.translatedText;
+              if (!translatedText || !translatedText.trim()) {
+                logger.warn(`Empty translation for: ${segment.text} (attempt ${attempts + 1})`);
+              }
+            } catch (err) {
+              logger.error(`LibreTranslate error (attempt ${attempts + 1}):`, err);
+            }
+            attempts++;
+            if (!translatedText) await new Promise(res => setTimeout(res, 500)); // wait before retry
+          }
+          translatedCaptions.push({
+            ...segment,
+            text: translatedText && translatedText.trim() ? translatedText : segment.text // fallback to original if empty
+          });
+        }
+      } catch (err) {
+        logger.error('LibreTranslate error:', err);
+        translatedCaptions = result.captions;
+      }
+    } else {
+      translatedCaptions = result.captions;
+    }
 
     // Save each caption segment to DB, log if missing info
     if (!meetingId) {
@@ -38,17 +77,17 @@ export const transcribeAudioHandler = async (req, res) => {
     if (!speaker) {
       logger.warn('No speaker (user) found, captions will not be saved.');
     }
-    if (result.captions && Array.isArray(result.captions)) {
+    if (translatedCaptions && Array.isArray(translatedCaptions)) {
       let savedCount = 0;
-      for (const segment of result.captions) {
+      for (const segment of translatedCaptions) {
         if (meetingId && speaker) {
           try {
             const captionDoc = new Caption({
               meetingId,
               speaker,
               originalText: segment.text,
-              originalLanguage: segment.language || language || 'en',
-              translations: segment.translations || [],
+              originalLanguage: language || 'en',
+              translations: [],
               confidence: segment.confidence || 0.8,
               timestamp: segment.timestamp ? new Date(segment.timestamp) : new Date(),
               duration: segment.duration || 0,
@@ -66,7 +105,7 @@ export const transcribeAudioHandler = async (req, res) => {
       logger.warn('No captions returned from Whisper, nothing to save.');
     }
 
-    res.json({ success: true, ...result });
+    res.json({ success: true, captions: translatedCaptions, language: language || 'en' });
   } catch (error) {
     logger.error('Whisper transcription error:', error);
     res.status(500).json({ success: false, message: 'Transcription failed', error });
