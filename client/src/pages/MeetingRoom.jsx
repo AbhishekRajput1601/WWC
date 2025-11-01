@@ -174,7 +174,7 @@ const MeetingRoom = () => {
           mediaRecorder.stop();
           mediaRecorder.start();
         }
-      }, 6000); // every 6 seconds
+      }, 2000); // every 2 seconds
     }
     return () => {
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {

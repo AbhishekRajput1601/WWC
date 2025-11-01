@@ -77,9 +77,11 @@ export const transcribeAudioHandler = async (req, res) => {
     if (!speaker) {
       logger.warn('No speaker (user) found, captions will not be saved.');
     }
-    if (translatedCaptions && Array.isArray(translatedCaptions)) {
+    // Filter out short/empty captions
+    const filteredCaptions = translatedCaptions.filter(seg => seg.text && seg.text.trim().length > 2);
+    if (filteredCaptions && Array.isArray(filteredCaptions)) {
       let savedCount = 0;
-      for (const segment of translatedCaptions) {
+      for (const segment of filteredCaptions) {
         if (meetingId && speaker) {
           try {
             const captionDoc = new Caption({
@@ -105,7 +107,7 @@ export const transcribeAudioHandler = async (req, res) => {
       logger.warn('No captions returned from Whisper, nothing to save.');
     }
 
-    res.json({ success: true, captions: translatedCaptions, language: language || 'en' });
+    res.json({ success: true, captions: filteredCaptions, language: language || 'en' });
   } catch (error) {
     logger.error('Whisper transcription error:', error);
     res.status(500).json({ success: false, message: 'Transcription failed', error });
