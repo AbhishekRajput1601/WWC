@@ -55,7 +55,6 @@ const captionSchema = new mongoose.Schema({
   },
 });
 
-// Create index for efficient queries
 captionSchema.index({ meetingId: 1, timestamp: 1 });
 captionSchema.index({ speaker: 1 });
 

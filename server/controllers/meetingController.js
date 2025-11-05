@@ -246,12 +246,10 @@ export const getUserMeetings = async (req, res) => {
 export const addUserInMeeting = async (req, res) => {
   try {
     const { meetingId, userId } = req.body;
-    // Find the meeting first
     const meeting = await Meeting.findOne({ meetingId });
     if (!meeting) {
       return res.status(404).json({ success: false, message: 'Meeting not found' });
     }
-    // Check if user is already a participant
     const alreadyParticipant = (meeting.participants || []).some(
       (p) => p.user && p.user.toString() === userId
     );
@@ -263,7 +261,6 @@ export const addUserInMeeting = async (req, res) => {
         data: meeting
       });
     }
-    // Add user as participant
     meeting.participants.push({ user: userId, joinedAt: new Date(), isActive: true });
     await meeting.save();
     await meeting.populate('participants.user', '-password');
