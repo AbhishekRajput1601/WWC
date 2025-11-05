@@ -106,6 +106,8 @@ const MeetingRoom = () => {
   const audioChunksRef = useRef([]);
   const [activePanel, setActivePanel] = useState(null);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+  // track if someone else is sharing so we can switch to shared-screen layout
+  const [remoteScreenSharerId, setRemoteScreenSharerId] = useState(null);
 
   const localVideoRef = useRef(null);
 
@@ -312,10 +314,10 @@ const MeetingRoom = () => {
   
     if (socket) {
       socket.on("user-started-screen-share", ({ socketId }) => {
-   
+        setRemoteScreenSharerId(socketId);
       });
       socket.on("user-stopped-screen-share", ({ socketId }) => {
-     
+        setRemoteScreenSharerId((prev) => (prev === socketId ? null : prev));
       });
     }
     if (authLoading) return;
@@ -429,6 +431,8 @@ const MeetingRoom = () => {
             delete copy[socketId];
             return copy;
           });
+          // If the leaver was the active screen sharer, reset shared-screen view
+          setRemoteScreenSharerId((prev) => (prev === socketId ? null : prev));
         });
 
         sock.on("disconnect", () => {
@@ -457,6 +461,19 @@ const MeetingRoom = () => {
     };
 
   }, [authLoading, isAuthenticated, meetingId, navigate, user]);
+
+  // Attach screen-share listeners when socket is ready (ensures others see your share too)
+  useEffect(() => {
+    if (!socket) return;
+    const onStart = ({ socketId }) => setRemoteScreenSharerId(socketId);
+    const onStop = ({ socketId }) => setRemoteScreenSharerId((prev) => (prev === socketId ? null : prev));
+    socket.on("user-started-screen-share", onStart);
+    socket.on("user-stopped-screen-share", onStop);
+    return () => {
+      socket.off("user-started-screen-share", onStart);
+      socket.off("user-stopped-screen-share", onStop);
+    };
+  }, [socket]);
 
   const createPeerConnection = (socketId, localStream, sock, isInitiator) => {
     if (peerConnections.current[socketId]) return;
@@ -617,8 +634,7 @@ const MeetingRoom = () => {
                 isLocal: true,
                 avatarChar: user?.name?.[0] || 'U',
               });
-   
-              // Ensure unique participant list and exclude self defensively
+
               const uniqueParticipants = Array.from(
                 new Map(participants.map((p) => [p.socketId, p])).values()
               ).filter((p) => p.socketId !== selfSocketId);
@@ -633,6 +649,52 @@ const MeetingRoom = () => {
                   avatarChar: (p.userName && p.userName[0]) || 'P',
                 });
               });
+              const activeShareId = isScreenSharing
+                ? 'local'
+                : remoteScreenSharerId;
+              if (activeShareId) {
+                const shareStream = isScreenSharing
+                  ? screenStreamRef.current || mediaStream
+                  : remoteStreams[remoteScreenSharerId];
+                return (
+                  <div className="w-full h-full flex items-center justify-center overflow-hidden">
+                    <div className="w-full max-w-[980px]" style={{ aspectRatio: '16 / 9' }}>
+                      <div className="relative bg-black rounded-2xl border-4 border-white shadow-xl overflow-hidden w-full h-full">
+                        <video
+                          autoPlay
+                          playsInline
+                          muted={isScreenSharing}
+                          className="w-full h-full object-contain bg-black"
+                          ref={(el) => {
+                            if (!el) return;
+                            el.srcObject = shareStream || null;
+                          }}
+                        />
+
+                        <div className="absolute bottom-6 right-6 flex items-center space-x-3">
+                          <div className="w-20 h-20 rounded-full border-4 border-white shadow-hard overflow-hidden bg-neutral-800 hidden sm:block">
+                  
+                            <video
+                              autoPlay
+                              playsInline
+                              muted
+                              className="w-full h-full object-cover"
+                              ref={(el) => {
+                                if (!el) return;
+                                const pipStream = isScreenSharing ? mediaStream : remoteStreams[selfSocketId];
+                                el.srcObject = pipStream || null;
+                              }}
+                            />
+                          </div>
+                          <div className="bg-white/90 px-3 py-1.5 rounded-xl text-sm font-semibold text-neutral-900 shadow">
+                            {isScreenSharing ? (user?.name || 'You') : (participants.find(p => p.socketId === remoteScreenSharerId)?.userName || 'Presenter')}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
 
               const count = tiles.length;
               const getCols = (n) => {
@@ -645,12 +707,13 @@ const MeetingRoom = () => {
                 return 5; // larger rooms
               };
               const cols = getCols(count);
-
-              // If only the local user is present, show a smaller centered preview
+              const maxVisible = cols * Math.min(Math.ceil(count / cols), 3); // cap to 3 rows visible nicely
+              const visibleTiles = tiles.slice(0, Math.max(maxVisible, Math.min(count, 9)));
+              const hidden = count - visibleTiles.length;
               if (count === 1) {
                 const t = tiles[0];
                 return (
-                  <div className="w-full h-full flex items-center justify-center overflow-auto">
+                  <div className="w-full h-full flex items-center justify-center overflow-hidden">
                     <div className="w-full max-w-[980px]" style={{ aspectRatio: '16 / 9' }}>
                       <VideoTile
                         stream={t.stream}
@@ -664,12 +727,12 @@ const MeetingRoom = () => {
               }
 
               return (
-                <div className="w-full h-full overflow-auto">
+                <div className="w-full h-full overflow-hidden">
                   <div
-                    className="grid gap-4 items-center content-center"
+                    className="relative grid gap-4 items-center content-start"
                     style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
                   >
-                    {tiles.map((t) => (
+                    {visibleTiles.map((t) => (
                       <div key={t.key} className="w-full" style={{ aspectRatio: '16 / 9' }}>
                         <VideoTile
                           stream={t.stream}
@@ -680,6 +743,11 @@ const MeetingRoom = () => {
                       </div>
                     ))}
                   </div>
+                  {hidden > 0 && (
+                    <div className="absolute bottom-6 right-6 w-16 h-16 rounded-full bg-white/90 border-2 border-neutral-300 shadow-hard flex items-center justify-center text-neutral-900 font-semibold">
+                      +{hidden}
+                    </div>
+                  )}
                 </div>
               );
             })()}
