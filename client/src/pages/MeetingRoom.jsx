@@ -597,29 +597,62 @@ const MeetingRoom = () => {
         {/* Split layout: left for video, right for panel */}
         <div className="flex w-full h-[calc(100vh-96px-72px)]">
           {/* Left: Video Call */}
-          <div className="flex-1 flex items-stretch justify-center bg-transparent h-full relative p-4">
-            {/* Responsive grid of all videos (local + remote) */}
-            <div className="w-full h-full">
-              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-[minmax(220px,1fr)] h-full">
-                {/* Local tile */}
-                <VideoTile
-                  stream={mediaStream}
-                  label={`${user?.name || 'You'} (You)`}
-                  isLocal={true}
-                  avatarChar={user?.name?.[0] || 'U'}
-                />
-                {/* Remote tiles */}
-                {Object.entries(remoteStreams).map(([sid, stream]) => (
-                  <VideoTile
-                    key={sid}
-                    stream={stream}
-                    label={(participants.find((p) => p.socketId === sid)?.userName) || 'Participant'}
-                    isLocal={false}
-                    avatarChar={(participants.find((p) => p.socketId === sid)?.userName?.[0]) || 'P'}
-                  />
-                ))}
-              </div>
-            </div>
+          <div className="flex-1 flex items-stretch justify-center bg-transparent h-full relative p-4 overflow-hidden">
+            {/* Dynamic grid of all videos (local + remote) fills available space */}
+            {(() => {
+              const tiles = [];
+              // Local first
+              tiles.push({
+                key: 'local',
+                stream: mediaStream,
+                label: `${user?.name || 'You'} (You)`,
+                isLocal: true,
+                avatarChar: user?.name?.[0] || 'U',
+              });
+              // Remote tiles in stable order based on participants array
+              participants.forEach((p) => {
+                const s = remoteStreams[p.socketId];
+                tiles.push({
+                  key: p.socketId,
+                  stream: s,
+                  label: p.userName || 'Participant',
+                  isLocal: false,
+                  avatarChar: (p.userName && p.userName[0]) || 'P',
+                });
+              });
+
+              const count = tiles.length;
+              const getCols = (n) => {
+                if (n <= 1) return 1;
+                if (n <= 2) return 2;
+                if (n <= 4) return 2; // 2x2 up to 4
+                if (n <= 6) return 3; // 3 columns for 5-6
+                if (n <= 9) return 3; // 3x3 up to 9
+                if (n <= 12) return 4; // 4 columns for 10-12
+                return 5; // larger rooms
+              };
+              const cols = getCols(count);
+
+              return (
+                <div className="w-full h-full overflow-auto">
+                  <div
+                    className="grid gap-4 items-center content-center"
+                    style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+                  >
+                    {tiles.map((t) => (
+                      <div key={t.key} className="w-full" style={{ aspectRatio: '16 / 9' }}>
+                        <VideoTile
+                          stream={t.stream}
+                          label={t.label}
+                          isLocal={t.isLocal}
+                          avatarChar={t.avatarChar}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             {showCaptions && (
               <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 max-w-2xl z-50">
