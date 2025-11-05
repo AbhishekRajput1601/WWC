@@ -51,7 +51,6 @@ const Chat = ({ socket: externalSocket }) => {
   }, [externalSocket]);
 
   useEffect(() => {
- 
     if (authLoading) {
       return;
     }
@@ -64,15 +63,13 @@ const Chat = ({ socket: externalSocket }) => {
     setLoading(false);
   }, [authLoading, isAuthenticated, meetingId, navigate]);
 
-
   const handleSendMessage = (e) => {
     if (e) e.preventDefault();
     if (!newMessage.trim()) return;
- 
+
     if (externalSocket) {
       externalSocket.emit("send-chat-message", { text: newMessage });
     } else {
-
       setMessages((prev) => [
         ...prev,
         {
@@ -132,8 +129,12 @@ const Chat = ({ socket: externalSocket }) => {
                   />
                 </svg>
               </div>
-              <p className="text-neutral-500 text-base font-semibold">No messages yet</p>
-              <p className="text-neutral-400 text-xs mt-1">Start the conversation!</p>
+              <p className="text-neutral-500 text-base font-semibold">
+                No messages yet
+              </p>
+              <p className="text-neutral-400 text-xs mt-1">
+                Start the conversation!
+              </p>
             </div>
           ) : (
             messages.map((message, index) => (

@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import authService from '../../services/authService';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import authService from "../../services/authService";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const { dispatch } = useAuth();
   const navigate = useNavigate();
@@ -26,42 +26,36 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
-    // Validate password confirmation
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       setLoading(false);
       return;
     }
 
     try {
-      // Prepare registration data (remove confirmPassword)
       const { confirmPassword, ...registerData } = formData;
-      
-      // Direct API call to registration endpoint
       const result = await authService.register(registerData);
-      
+
       if (result.success) {
-        // Update auth context with user data
         dispatch({
-          type: 'REGISTER_SUCCESS',
+          type: "REGISTER_SUCCESS",
           payload: {
             token: result.token,
-            user: result.user
-          }
+            user: result.user,
+          },
         });
-        
-        // Navigate to dashboard
-        navigate('/dashboard');
+
+        navigate("/dashboard");
       } else {
         setError(result.message);
       }
     } catch (error) {
-      setError('An unexpected error occurred. Please try again.');
-      console.error('Registration error:', error);
+      setError("An unexpected error occurred. Please try again.");
+      console.error("Registration error:", error);
     }
-    
+
     setLoading(false);
   };
 
@@ -70,7 +64,9 @@ const Signup = () => {
       <div className="max-w-md w-full space-y-6">
         <div className="text-center">
           <div className="mx-auto h-16 w-16 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-2xl flex items-center justify-center shadow-medium">
-            <span className="text-white font-bold text-2xl font-display">W</span>
+            <span className="text-white font-bold text-2xl font-display">
+              W
+            </span>
           </div>
           <h2 className="mt-4 text-center text-2xl font-bold text-neutral-900 font-display">
             Join WWC Today
@@ -79,7 +75,7 @@ const Signup = () => {
             Create your account and start hosting amazing meetings
           </p>
           <p className="mt-1 text-center text-sm text-neutral-500">
-            Already have an account?{' '}
+            Already have an account?{" "}
             <Link
               to="/login"
               className="font-semibold text-wwc-600 hover:text-wwc-700 transition-colors duration-200"
@@ -94,8 +90,16 @@ const Signup = () => {
               <div className="bg-error-50 border border-error-200 text-error-700 px-4 py-3 rounded-lg animate-slide-in-up">
                 <div className="flex">
                   <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-error-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    <svg
+                      className="h-5 w-5 text-error-400"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </div>
                   <div className="ml-3">
@@ -104,10 +108,13 @@ const Signup = () => {
                 </div>
               </div>
             )}
-            
+
             <div className="space-y-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-semibold text-neutral-700 mb-2">
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-semibold text-neutral-700 mb-2"
+                >
                   Full Name
                 </label>
                 <input
@@ -122,9 +129,12 @@ const Signup = () => {
                   onChange={handleChange}
                 />
               </div>
-                           
+
               <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-neutral-700 mb-2">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-semibold text-neutral-700 mb-2"
+                >
                   Email Address
                 </label>
                 <input
@@ -139,9 +149,12 @@ const Signup = () => {
                   onChange={handleChange}
                 />
               </div>
-              
+
               <div>
-                <label htmlFor="password" className="block text-sm font-semibold text-neutral-700 mb-2">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-semibold text-neutral-700 mb-2"
+                >
                   Password
                 </label>
                 <input
@@ -156,9 +169,12 @@ const Signup = () => {
                   onChange={handleChange}
                 />
               </div>
-              
+
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-semibold text-neutral-700 mb-2">
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-semibold text-neutral-700 mb-2"
+                >
                   Confirm Password
                 </label>
                 <input
@@ -183,14 +199,30 @@ const Signup = () => {
               >
                 {loading ? (
                   <div className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-black"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Creating your account...
                   </div>
                 ) : (
-                  'Join WWC Community'
+                  "Join WWC Community"
                 )}
               </button>
             </div>

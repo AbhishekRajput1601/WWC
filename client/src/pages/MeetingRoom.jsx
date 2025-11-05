@@ -14,7 +14,7 @@ const SOCKET_SERVER_URL =
   import.meta.env.VITE_SOCKET_SERVER_URL || "http://localhost:5000";
 
 const MeetingRoom = () => {
-  const VideoTile = ({ stream, label, isLocal = false, avatarChar = 'U' }) => {
+  const VideoTile = ({ stream, label, isLocal = false, avatarChar = "U" }) => {
     const ref = React.useRef(null);
     const [hasVideo, setHasVideo] = useState(false);
 
@@ -30,9 +30,9 @@ const MeetingRoom = () => {
         if (!v.length) return false;
         const t = v[0];
         if (isLocal) {
-          return t.readyState === 'live' && t.enabled !== false;
+          return t.readyState === "live" && t.enabled !== false;
         }
-        return t.readyState === 'live' && t.muted === false;
+        return t.readyState === "live" && t.muted === false;
       };
 
       const update = () => setHasVideo(computeHasVideo());
@@ -46,17 +46,17 @@ const MeetingRoom = () => {
         const onMute = () => update();
         const onUnmute = () => update();
         const onEnded = () => update();
-        stream.addEventListener?.('addtrack', onAdd);
-        stream.addEventListener?.('removetrack', onRemove);
-        track?.addEventListener?.('mute', onMute);
-        track?.addEventListener?.('unmute', onUnmute);
-        track?.addEventListener?.('ended', onEnded);
+        stream.addEventListener?.("addtrack", onAdd);
+        stream.addEventListener?.("removetrack", onRemove);
+        track?.addEventListener?.("mute", onMute);
+        track?.addEventListener?.("unmute", onUnmute);
+        track?.addEventListener?.("ended", onEnded);
         return () => {
-          stream.removeEventListener?.('addtrack', onAdd);
-          stream.removeEventListener?.('removetrack', onRemove);
-          track?.removeEventListener?.('mute', onMute);
-          track?.removeEventListener?.('unmute', onUnmute);
-          track?.removeEventListener?.('ended', onEnded);
+          stream.removeEventListener?.("addtrack", onAdd);
+          stream.removeEventListener?.("removetrack", onRemove);
+          track?.removeEventListener?.("mute", onMute);
+          track?.removeEventListener?.("unmute", onUnmute);
+          track?.removeEventListener?.("ended", onEnded);
         };
       }
     }, [stream]);
@@ -73,7 +73,9 @@ const MeetingRoom = () => {
         {!hasVideo && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-24 h-24 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-4xl">{avatarChar}</span>
+              <span className="text-white font-bold text-4xl">
+                {avatarChar}
+              </span>
             </div>
           </div>
         )}
@@ -83,13 +85,13 @@ const MeetingRoom = () => {
       </div>
     );
   };
-    useEffect(() => {
-      const originalOverflow = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = originalOverflow;
-      };
-    }, []);
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
   const { meetingId } = useParams();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -112,11 +114,11 @@ const MeetingRoom = () => {
   const localVideoRef = useRef(null);
 
   const [mediaStream, setMediaStream] = useState(null);
- 
+
   const [socket, setSocket] = useState(null);
   const [participants, setParticipants] = useState([]);
-  const [remoteStreams, setRemoteStreams] = useState({}); 
-  const peerConnections = useRef({}); 
+  const [remoteStreams, setRemoteStreams] = useState({});
+  const peerConnections = useRef({});
   const iceServers = useRef(null);
   const [selfSocketId, setSelfSocketId] = useState(null);
 
@@ -131,13 +133,13 @@ const MeetingRoom = () => {
       const result = await meetingService.endMeeting(meetingId);
       if (result.success) {
         setMeetingEnded(true);
-    
+
         setMeeting(result.meeting);
- 
+
         if (mediaStream) {
           mediaStream.getTracks().forEach((track) => track.stop());
         }
-    
+
         setTimeout(() => {
           navigate("/dashboard");
         }, 2000);
@@ -170,7 +172,7 @@ const MeetingRoom = () => {
       if (!isVideoOn && localVideoRef.current) {
         localVideoRef.current.srcObject = mediaStream;
       }
-  
+
       if (isVideoOn && localVideoRef.current) {
         localVideoRef.current.srcObject = null;
       }
@@ -184,17 +186,19 @@ const MeetingRoom = () => {
   useEffect(() => {
     let intervalId;
     if (showCaptions && mediaStream) {
-   
       const audioStream = new MediaStream(mediaStream.getAudioTracks());
-      let mimeType = '';
-      if (MediaRecorder.isTypeSupported('audio/wav')) {
-        mimeType = 'audio/wav';
-      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
-        mimeType = 'audio/webm';
+      let mimeType = "";
+      if (MediaRecorder.isTypeSupported("audio/wav")) {
+        mimeType = "audio/wav";
+      } else if (MediaRecorder.isTypeSupported("audio/webm")) {
+        mimeType = "audio/webm";
       } else {
-        mimeType = '';
+        mimeType = "";
       }
-      const mediaRecorder = new window.MediaRecorder(audioStream, mimeType ? { mimeType } : undefined);
+      const mediaRecorder = new window.MediaRecorder(
+        audioStream,
+        mimeType ? { mimeType } : undefined
+      );
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -205,44 +209,58 @@ const MeetingRoom = () => {
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType || 'audio/webm' });
-        console.log('Audio blob size:', audioBlob.size, 'bytes');
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: mimeType || "audio/webm",
+        });
+        console.log("Audio blob size:", audioBlob.size, "bytes");
         audioChunksRef.current = [];
         const formData = new FormData();
-        formData.append('audio', audioBlob, mimeType === 'audio/wav' ? 'audio.wav' : 'audio.webm');
-        formData.append('language', selectedLanguage);
-        formData.append('translate', selectedLanguage !== 'en' ? 'true' : 'false');
-        formData.append('meetingId', meetingId); 
+        formData.append(
+          "audio",
+          audioBlob,
+          mimeType === "audio/wav" ? "audio.wav" : "audio.webm"
+        );
+        formData.append("language", selectedLanguage);
+        formData.append(
+          "translate",
+          selectedLanguage !== "en" ? "true" : "false"
+        );
+        formData.append("meetingId", meetingId);
         try {
-          const token = localStorage.getItem('token');
-          const res = await axios.post('/api/whisper/transcribe', formData, {
+          const token = localStorage.getItem("token");
+          const res = await axios.post("/api/whisper/transcribe", formData, {
             headers: {
-              'Content-Type': 'multipart/form-data',
-              ...(token ? { Authorization: `Bearer ${token}` } : {})
+              "Content-Type": "multipart/form-data",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
           });
           if (res.data && res.data.captions && res.data.captions.length > 0) {
-            setCurrentCaption(res.data.captions[res.data.captions.length - 1].text);
+            setCurrentCaption(
+              res.data.captions[res.data.captions.length - 1].text
+            );
           } else {
-            setCurrentCaption('');
-            console.error('No captions returned:', res.data);
+            setCurrentCaption("");
+            console.error("No captions returned:", res.data);
           }
         } catch (err) {
-          setCurrentCaption('');
-          console.error('Caption error:', err);
+          setCurrentCaption("");
+          console.error("Caption error:", err);
         }
       };
 
       mediaRecorder.start();
       intervalId = setInterval(() => {
-        if (mediaRecorder.state === 'recording') {
+        if (mediaRecorder.state === "recording") {
           mediaRecorder.stop();
           mediaRecorder.start();
         }
       }, 2000);
     }
     return () => {
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      if (
+        mediaRecorderRef.current &&
+        mediaRecorderRef.current.state !== "inactive"
+      ) {
         mediaRecorderRef.current.stop();
       }
       clearInterval(intervalId);
@@ -258,7 +276,7 @@ const MeetingRoom = () => {
         });
         screenStreamRef.current = screenStream;
         setIsScreenSharing(true);
-       
+
         Object.values(peerConnections.current).forEach((pc) => {
           const sender = pc
             .getSenders()
@@ -267,15 +285,15 @@ const MeetingRoom = () => {
             sender.replaceTrack(screenStream.getVideoTracks()[0]);
           }
         });
-  
+
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = screenStream;
         }
-   
+
         screenStream.getVideoTracks()[0].onended = () => {
           stopScreenShare();
         };
-      
+
         if (socket) socket.emit("start-screen-share");
       } catch (err) {
         console.error("Error starting screen share:", err);
@@ -291,7 +309,7 @@ const MeetingRoom = () => {
       screenStreamRef.current.getTracks().forEach((track) => track.stop());
       screenStreamRef.current = null;
     }
-   
+
     if (mediaStream) {
       Object.values(peerConnections.current).forEach((pc) => {
         const sender = pc
@@ -301,17 +319,16 @@ const MeetingRoom = () => {
           sender.replaceTrack(mediaStream.getVideoTracks()[0]);
         }
       });
-   
+
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = mediaStream;
       }
     }
-  
+
     if (socket) socket.emit("stop-screen-share");
   };
 
   useEffect(() => {
-  
     if (socket) {
       socket.on("user-started-screen-share", ({ socketId }) => {
         setRemoteScreenSharerId(socketId);
@@ -340,7 +357,7 @@ const MeetingRoom = () => {
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = localStream;
         }
-  
+
         const sock = io(SOCKET_SERVER_URL, { transports: ["websocket"] });
         setSocket(sock);
         // Capture our own socket id so we can filter ourselves from remote lists
@@ -348,23 +365,21 @@ const MeetingRoom = () => {
           setSelfSocketId(sock.id);
         });
 
-
         sock.emit("join-meeting", {
           meetingId,
           userId: user?._id,
           userName: user?.name || "User",
         });
 
-     
         sock.on("ice-servers", (config) => {
           iceServers.current = config;
         });
 
-  
         sock.on("existing-participants", (existing) => {
           // De-duplicate by socketId and exclude self defensively
-          const uniq = Array.from(new Map(existing.map(p => [p.socketId, p])).values())
-            .filter(p => p.socketId !== selfSocketId);
+          const uniq = Array.from(
+            new Map(existing.map((p) => [p.socketId, p])).values()
+          ).filter((p) => p.socketId !== selfSocketId);
           setParticipants(uniq);
 
           uniq.forEach((p) => {
@@ -375,8 +390,12 @@ const MeetingRoom = () => {
         sock.on("user-joined", (data) => {
           if (data.socketId === selfSocketId) return;
           setParticipants((prev) => {
-            const next = prev.some((p) => p.socketId === data.socketId) ? prev : [...prev, data];
-            return Array.from(new Map(next.map(p => [p.socketId, p])).values());
+            const next = prev.some((p) => p.socketId === data.socketId)
+              ? prev
+              : [...prev, data];
+            return Array.from(
+              new Map(next.map((p) => [p.socketId, p])).values()
+            );
           });
 
           createPeerConnection(data.socketId, localStream, sock, false);
@@ -459,14 +478,14 @@ const MeetingRoom = () => {
       peerConnections.current = {};
       setRemoteStreams({});
     };
-
   }, [authLoading, isAuthenticated, meetingId, navigate, user]);
 
   // Attach screen-share listeners when socket is ready (ensures others see your share too)
   useEffect(() => {
     if (!socket) return;
     const onStart = ({ socketId }) => setRemoteScreenSharerId(socketId);
-    const onStop = ({ socketId }) => setRemoteScreenSharerId((prev) => (prev === socketId ? null : prev));
+    const onStop = ({ socketId }) =>
+      setRemoteScreenSharerId((prev) => (prev === socketId ? null : prev));
     socket.on("user-started-screen-share", onStart);
     socket.on("user-stopped-screen-share", onStop);
     return () => {
@@ -477,8 +496,9 @@ const MeetingRoom = () => {
 
   const createPeerConnection = (socketId, localStream, sock, isInitiator) => {
     if (peerConnections.current[socketId]) return;
-    const rtcConfig =
-      iceServers.current || { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+    const rtcConfig = iceServers.current || {
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+    };
     const pc = new RTCPeerConnection(rtcConfig);
     peerConnections.current[socketId] = pc;
 
@@ -487,7 +507,8 @@ const MeetingRoom = () => {
     });
 
     pc.ontrack = (event) => {
-      const inboundStream = event.streams && event.streams[0] ? event.streams[0] : null;
+      const inboundStream =
+        event.streams && event.streams[0] ? event.streams[0] : null;
       if (inboundStream) {
         setRemoteStreams((prev) => ({ ...prev, [socketId]: inboundStream }));
       }
@@ -619,20 +640,17 @@ const MeetingRoom = () => {
       />
 
       <div className="flex-1 flex mt-20">
-    
         <div className="flex w-full h-[calc(100vh-96px-72px)]">
-         
           <div className="flex-1 flex items-stretch justify-center bg-transparent h-full relative p-4 overflow-hidden">
-        
             {(() => {
               const tiles = [];
-        
+
               tiles.push({
-                key: 'local',
+                key: "local",
                 stream: mediaStream,
-                label: `${user?.name || 'You'} (You)`,
+                label: `${user?.name || "You"} (You)`,
                 isLocal: true,
-                avatarChar: user?.name?.[0] || 'U',
+                avatarChar: user?.name?.[0] || "U",
               });
 
               const uniqueParticipants = Array.from(
@@ -644,13 +662,13 @@ const MeetingRoom = () => {
                 tiles.push({
                   key: p.socketId,
                   stream: s,
-                  label: p.userName || 'Participant',
+                  label: p.userName || "Participant",
                   isLocal: false,
-                  avatarChar: (p.userName && p.userName[0]) || 'P',
+                  avatarChar: (p.userName && p.userName[0]) || "P",
                 });
               });
               const activeShareId = isScreenSharing
-                ? 'local'
+                ? "local"
                 : remoteScreenSharerId;
               if (activeShareId) {
                 const shareStream = isScreenSharing
@@ -658,7 +676,10 @@ const MeetingRoom = () => {
                   : remoteStreams[remoteScreenSharerId];
                 return (
                   <div className="w-full h-full flex items-center justify-center overflow-hidden">
-                    <div className="w-full max-w-[980px]" style={{ aspectRatio: '16 / 9' }}>
+                    <div
+                      className="w-full max-w-[980px]"
+                      style={{ aspectRatio: "16 / 9" }}
+                    >
                       <div className="relative bg-black rounded-2xl border-4 border-white shadow-xl overflow-hidden w-full h-full">
                         <video
                           autoPlay
@@ -673,7 +694,6 @@ const MeetingRoom = () => {
 
                         <div className="absolute bottom-6 right-6 flex items-center space-x-3">
                           <div className="w-20 h-20 rounded-full border-4 border-white shadow-hard overflow-hidden bg-neutral-800 hidden sm:block">
-                  
                             <video
                               autoPlay
                               playsInline
@@ -681,13 +701,19 @@ const MeetingRoom = () => {
                               className="w-full h-full object-cover"
                               ref={(el) => {
                                 if (!el) return;
-                                const pipStream = isScreenSharing ? mediaStream : remoteStreams[selfSocketId];
+                                const pipStream = isScreenSharing
+                                  ? mediaStream
+                                  : remoteStreams[selfSocketId];
                                 el.srcObject = pipStream || null;
                               }}
                             />
                           </div>
                           <div className="bg-white/90 px-3 py-1.5 rounded-xl text-sm font-semibold text-neutral-900 shadow">
-                            {isScreenSharing ? (user?.name || 'You') : (participants.find(p => p.socketId === remoteScreenSharerId)?.userName || 'Presenter')}
+                            {isScreenSharing
+                              ? user?.name || "You"
+                              : participants.find(
+                                  (p) => p.socketId === remoteScreenSharerId
+                                )?.userName || "Presenter"}
                           </div>
                         </div>
                       </div>
@@ -708,13 +734,19 @@ const MeetingRoom = () => {
               };
               const cols = getCols(count);
               const maxVisible = cols * Math.min(Math.ceil(count / cols), 3); // cap to 3 rows visible nicely
-              const visibleTiles = tiles.slice(0, Math.max(maxVisible, Math.min(count, 9)));
+              const visibleTiles = tiles.slice(
+                0,
+                Math.max(maxVisible, Math.min(count, 9))
+              );
               const hidden = count - visibleTiles.length;
               if (count === 1) {
                 const t = tiles[0];
                 return (
                   <div className="w-full h-full flex items-center justify-center overflow-hidden">
-                    <div className="w-full max-w-[980px]" style={{ aspectRatio: '16 / 9' }}>
+                    <div
+                      className="w-full max-w-[980px]"
+                      style={{ aspectRatio: "16 / 9" }}
+                    >
                       <VideoTile
                         stream={t.stream}
                         label={t.label}
@@ -730,10 +762,16 @@ const MeetingRoom = () => {
                 <div className="w-full h-full overflow-hidden">
                   <div
                     className="relative grid gap-4 items-center content-start"
-                    style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+                    style={{
+                      gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                    }}
                   >
                     {visibleTiles.map((t) => (
-                      <div key={t.key} className="w-full" style={{ aspectRatio: '16 / 9' }}>
+                      <div
+                        key={t.key}
+                        className="w-full"
+                        style={{ aspectRatio: "16 / 9" }}
+                      >
                         <VideoTile
                           stream={t.stream}
                           label={t.label}
@@ -756,31 +794,34 @@ const MeetingRoom = () => {
               <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 max-w-2xl z-50">
                 <div className="bg-white/95 backdrop-blur-md text-neutral-900 px-6 py-3 rounded-2xl border border-neutral-200 shadow-medium min-h-[48px] flex items-center justify-center">
                   <p className="text-center font-medium">
-                    {currentCaption
-                      ? currentCaption
-                      : <span className="text-neutral-400 italic">Listening...</span>}
+                    {currentCaption ? (
+                      currentCaption
+                    ) : (
+                      <span className="text-neutral-400 italic">
+                        Listening...
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
             )}
           </div>
           {/* Right: Panel (Chat or Participants) */}
-         
-            {activePanel === "chat" && (
-              <Suspense fallback={<div>Loading Chat...</div>}>
-                <Chat socket={socket} />
-              </Suspense>
-            )}
-            {activePanel === "users" && (
-              <Suspense fallback={<div>Loading Users...</div>}>
-                <AllUsers
-                  user={user}
-                  isMuted={isMuted}
-                  participants={participants}
-                />
-              </Suspense>
-            )}
-        
+
+          {activePanel === "chat" && (
+            <Suspense fallback={<div>Loading Chat...</div>}>
+              <Chat socket={socket} />
+            </Suspense>
+          )}
+          {activePanel === "users" && (
+            <Suspense fallback={<div>Loading Users...</div>}>
+              <AllUsers
+                user={user}
+                isMuted={isMuted}
+                participants={participants}
+              />
+            </Suspense>
+          )}
         </div>
       </div>
 
@@ -802,6 +843,6 @@ const MeetingRoom = () => {
       />
     </div>
   );
-}
+};
 
 export default MeetingRoom;
