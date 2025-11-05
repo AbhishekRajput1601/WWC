@@ -14,6 +14,62 @@ const SOCKET_SERVER_URL =
   import.meta.env.VITE_SOCKET_SERVER_URL || "http://localhost:5000";
 
 const MeetingRoom = () => {
+  // Reusable video tile (local or remote)
+  const VideoTile = ({ stream, label, isLocal = false, avatarChar = 'U' }) => {
+    const ref = React.useRef(null);
+    const [hasVideo, setHasVideo] = useState(false);
+
+    useEffect(() => {
+      const el = ref.current;
+      if (el) {
+        el.srcObject = stream || null;
+      }
+
+      const update = () => {
+        if (!stream) {
+          setHasVideo(false);
+          return;
+        }
+        const v = stream.getVideoTracks();
+        setHasVideo(v.length > 0 && v[0].enabled !== false);
+      };
+
+      update();
+
+      if (stream) {
+        const onAdd = () => update();
+        const onRemove = () => update();
+        stream.addEventListener?.('addtrack', onAdd);
+        stream.addEventListener?.('removetrack', onRemove);
+        return () => {
+          stream.removeEventListener?.('addtrack', onAdd);
+          stream.removeEventListener?.('removetrack', onRemove);
+        };
+      }
+    }, [stream]);
+
+    return (
+      <div className="relative bg-black rounded-2xl border-4 border-white shadow-xl overflow-hidden w-full h-full min-h-[220px]">
+        <video
+          ref={ref}
+          autoPlay
+          playsInline
+          className="w-full h-full object-cover"
+          muted={isLocal}
+        />
+        {!hasVideo && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-24 h-24 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-4xl">{avatarChar}</span>
+            </div>
+          </div>
+        )}
+        <div className="absolute bottom-3 left-3 bg-white/85 text-neutral-900 px-3 py-1.5 rounded-xl text-xs font-semibold shadow">
+          {label}
+        </div>
+      </div>
+    );
+  };
     // Disable scrolling on mount, restore on unmount
     useEffect(() => {
       const originalOverflow = document.body.style.overflow;
@@ -303,8 +359,11 @@ const MeetingRoom = () => {
 
         // New user joined
         sock.on("user-joined", (data) => {
-          setParticipants((prev) => [...prev, data]);
-          createPeerConnection(data.socketId, localStream, sock, true);
+          setParticipants((prev) =>
+            prev.some((p) => p.socketId === data.socketId) ? prev : [...prev, data]
+          );
+          // Existing participants should NOT be initiators; let the new user initiate
+          createPeerConnection(data.socketId, localStream, sock, false);
         });
 
         // Offer
@@ -391,20 +450,21 @@ const MeetingRoom = () => {
   // Create peer connection
   const createPeerConnection = (socketId, localStream, sock, isInitiator) => {
     if (peerConnections.current[socketId]) return;
-    const pc = new RTCPeerConnection(iceServers.current || {});
+    const rtcConfig =
+      iceServers.current || { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+    const pc = new RTCPeerConnection(rtcConfig);
     peerConnections.current[socketId] = pc;
     // Add local tracks
     localStream.getTracks().forEach((track) => {
       pc.addTrack(track, localStream);
     });
     // Remote stream
-    const remoteStream = new MediaStream();
-    setRemoteStreams((prev) => ({ ...prev, [socketId]: remoteStream }));
     pc.ontrack = (event) => {
-      event.streams[0].getTracks().forEach((track) => {
-        remoteStream.addTrack(track);
-      });
-      setRemoteStreams((prev) => ({ ...prev, [socketId]: remoteStream }));
+      const inboundStream = event.streams && event.streams[0] ? event.streams[0] : null;
+      if (inboundStream) {
+        // Use the provided stream identity so downstream effects re-run
+        setRemoteStreams((prev) => ({ ...prev, [socketId]: inboundStream }));
+      }
     };
     // ICE candidates
     pc.onicecandidate = (event) => {
@@ -537,79 +597,29 @@ const MeetingRoom = () => {
         {/* Split layout: left for video, right for panel */}
         <div className="flex w-full h-[calc(100vh-96px-72px)]">
           {/* Left: Video Call */}
-          <div className="flex-1 flex items-center justify-center bg-transparent h-full">
-            <div className="w-[1100px] h-[560px] flex items-center justify-center">
-              {/* Local video - Big Screen Perfectly Centered */}
-              <div className="flex flex-col items-center justify-center w-full max-w-5xl mx-auto h-full relative">
-                {isVideoOn ? (
-                  <video
-                    ref={localVideoRef}
-                    autoPlay
-                    muted
-                    playsInline
-                    className="w-full h-[80vh] object-cover rounded-2xl bg-black shadow-xl border-4 border-white"
-                    style={{ maxHeight: "80vh", minHeight: "500px" }}
+          <div className="flex-1 flex items-stretch justify-center bg-transparent h-full relative p-4">
+            {/* Responsive grid of all videos (local + remote) */}
+            <div className="w-full h-full">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-[minmax(220px,1fr)] h-full">
+                {/* Local tile */}
+                <VideoTile
+                  stream={mediaStream}
+                  label={`${user?.name || 'You'} (You)`}
+                  isLocal={true}
+                  avatarChar={user?.name?.[0] || 'U'}
+                />
+                {/* Remote tiles */}
+                {Object.entries(remoteStreams).map(([sid, stream]) => (
+                  <VideoTile
+                    key={sid}
+                    stream={stream}
+                    label={(participants.find((p) => p.socketId === sid)?.userName) || 'Participant'}
+                    isLocal={false}
+                    avatarChar={(participants.find((p) => p.socketId === sid)?.userName?.[0]) || 'P'}
                   />
-                ) : (
-                  <div className="w-full h-[80vh] min-h-[500px] flex items-center justify-center rounded-2xl bg-black shadow-xl border-4 border-white">
-                    <div className="w-32 h-32 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-full flex items-center justify-center">
-                      <span className="text-white font-bold text-6xl">{user?.name?.[0] || "U"}</span>
-                    </div>
-                  </div>
-                )}
-                <div className="absolute bottom-6 right-8">
-                  <span className="px-4 py-2 bg-white/80 rounded-xl text-lg font-bold text-neutral-900 shadow-lg border border-neutral-300">
-                    {user?.name || "You"} (You)
-                  </span>
-                </div>
-                {/* LIVE and Mic status inside user div */}
-                <div className="absolute top-4 right-4 flex flex-col items-end space-y-3">
-                  <div className="bg-error-500 text-black px-4 py-2 rounded-full text-sm font-bold flex items-center space-x-2 shadow-lg">
-                    <div className="w-3 h-3 rounded-full animate-pulse"></div>
-                    <span>LIVE</span>
-                  </div>
-                  <div
-                    className={`px-4 py-2 rounded-full text-sm font-bold flex items-center space-x-2 shadow-lg ${
-                      isMuted
-                        ? "bg-neutral-300 text-neutral-700"
-                        : "bg-success-100 text-success-700"
-                    }`}
-                  >
-                    {isMuted ? (
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 19V21a3 3 0 006 0v-2M5 10v2a7 7 0 0014 0v-2M9 5a3 3 0 016 0v6a3 3 0 01-6 0V5zm-4 4l16 16"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 1v22m6-6a6 6 0 01-12 0V7a6 6 0 0112 0v10z"
-                        />
-                      </svg>
-                    )}
-                    <span>{isMuted ? "Mic Muted" : "Mic On"}</span>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
-            {/* ...existing code... */}
 
             {showCaptions && (
               <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 max-w-2xl z-50">
