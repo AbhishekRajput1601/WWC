@@ -627,7 +627,7 @@ const MeetingRoom = () => {
          
             {activePanel === "chat" && (
               <Suspense fallback={<div>Loading Chat...</div>}>
-                <Chat />
+                <Chat socket={socket} />
               </Suspense>
             )}
             {activePanel === "users" && (

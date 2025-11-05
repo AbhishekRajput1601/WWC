@@ -2,13 +2,53 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-const Chat = () => {
+const Chat = ({ socket: externalSocket }) => {
   const { meetingId } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState([]);
+
+  // Attach socket listeners when a socket is available (coming from MeetingRoom)
+  useEffect(() => {
+    const sock = externalSocket;
+    if (!sock) return; // Renders UI but won't be real-time without socket
+
+    const onChatMessage = (msg) => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: msg.timestamp || Date.now(),
+          sender: msg.senderName || "User",
+          text: msg.text,
+          timestamp: new Date(msg.timestamp || Date.now()).toLocaleTimeString(),
+          senderId: msg.senderId,
+        },
+      ]);
+    };
+
+    const onChatHistory = (history) => {
+      // history: array of { senderId, senderName, text, timestamp }
+      const mapped = (history || []).map((m) => ({
+        id: m.timestamp || Math.random(),
+        sender: m.senderName || "User",
+        text: m.text,
+        timestamp: new Date(m.timestamp || Date.now()).toLocaleTimeString(),
+        senderId: m.senderId,
+      }));
+      setMessages(mapped);
+    };
+
+    sock.on("chat-message", onChatMessage);
+    sock.on("chat-history", onChatHistory);
+    // Ask server for latest history when Chat mounts or socket changes
+    sock.emit("get-chat-history");
+    return () => {
+      sock.off("chat-message", onChatMessage);
+      sock.off("chat-history", onChatHistory);
+    };
+  }, [externalSocket]);
 
   useEffect(() => {
     // Wait for auth to finish loading
@@ -27,9 +67,14 @@ const Chat = () => {
   // Handle chat message send
   const handleSendMessage = (e) => {
     if (e) e.preventDefault();
-    if (newMessage.trim()) {
-      setMessages([
-        ...messages,
+    if (!newMessage.trim()) return;
+    // Emit through socket so everyone (including sender) receives the same event
+    if (externalSocket) {
+      externalSocket.emit("send-chat-message", { text: newMessage });
+    } else {
+      // Fallback: local echo so UI isn't empty if socket missing
+      setMessages((prev) => [
+        ...prev,
         {
           id: Date.now(),
           sender: user?.name || "You",
@@ -37,8 +82,8 @@ const Chat = () => {
           timestamp: new Date().toLocaleTimeString(),
         },
       ]);
-      setNewMessage("");
     }
+    setNewMessage("");
   };
 
   const goBackToMeeting = () => {

@@ -70,12 +70,22 @@ const meetingSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  // Persisted in-meeting chat messages
+  messages: [
+    {
+      sender: { type: mongoose.Schema.ObjectId, ref: 'User' },
+      senderName: { type: String },
+      text: { type: String, required: true, maxlength: 2000 },
+      timestamp: { type: Date, default: Date.now },
+    },
+  ],
 });
 
 // Create index for efficient queries
 meetingSchema.index({ meetingId: 1 });
 meetingSchema.index({ host: 1 });
 meetingSchema.index({ 'participants.user': 1 });
+meetingSchema.index({ meetingId: 1, 'messages.timestamp': -1 });
 
 const Meeting = mongoose.model('Meeting', meetingSchema);
 

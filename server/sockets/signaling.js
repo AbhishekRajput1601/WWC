@@ -1,5 +1,6 @@
 import logger from '../utils/logger.js';
 import { turnConfig } from '../config/turnConfig.js';
+import Meeting from '../models/Meeting.js';
 
 const activeMeetings = new Map(); // meetingId -> Set of socket IDs
 const socketToMeeting = new Map(); // socketId -> meetingId
@@ -44,6 +45,81 @@ export const setupSignaling = (io) => {
       });
 
       socket.emit('existing-participants', existingParticipants);
+
+      // Send last 100 chat messages as history
+      Meeting.findOne({ meetingId })
+        .select({ messages: { $slice: -100 } })
+        .lean()
+        .then((doc) => {
+          const history = (doc?.messages || []).map((m) => ({
+            senderId: m.sender?.toString?.() || null,
+            senderName: m.senderName || 'User',
+            text: m.text,
+            timestamp: new Date(m.timestamp).getTime(),
+          }));
+          socket.emit('chat-history', history);
+        })
+        .catch((err) => {
+          logger.error('Failed to load chat history', err?.message || err);
+        });
+    });
+
+    // Allow clients to request chat history on demand (e.g., when Chat panel mounts)
+    socket.on('get-chat-history', () => {
+      const meetingId = socketToMeeting.get(socket.id);
+      if (!meetingId) return;
+      Meeting.findOne({ meetingId })
+        .select({ messages: { $slice: -100 } })
+        .lean()
+        .then((doc) => {
+          const history = (doc?.messages || []).map((m) => ({
+            senderId: m.sender?.toString?.() || null,
+            senderName: m.senderName || 'User',
+            text: m.text,
+            timestamp: new Date(m.timestamp).getTime(),
+          }));
+          socket.emit('chat-history', history);
+        })
+        .catch((err) => {
+          logger.error('Failed to load chat history (on-demand)', err?.message || err);
+        });
+    });
+
+    // In-meeting chat: broadcast a chat message to everyone in the meeting (including sender)
+    socket.on('send-chat-message', async ({ text }) => {
+      const meetingId = socketToMeeting.get(socket.id);
+      const user = socketToUser.get(socket.id);
+      if (!meetingId || !text || !text.trim()) return;
+
+      const payload = {
+        senderId: user?.id,
+        senderName: user?.name || 'User',
+        text: String(text),
+        timestamp: Date.now(),
+      };
+
+      // Persist to DB (best-effort; do not block broadcast on failure)
+      try {
+        await Meeting.updateOne(
+          { meetingId },
+          {
+            $push: {
+              messages: {
+                sender: user?.id || undefined,
+                senderName: payload.senderName,
+                text: payload.text,
+                timestamp: new Date(payload.timestamp),
+              },
+            },
+          }
+        ).exec();
+      } catch (err) {
+        logger.error('Failed to persist chat message', err?.message || err);
+      }
+
+      // Emit to all participants in the room, including the sender
+      io.to(meetingId).emit('chat-message', payload);
+      logger.debug(`Chat in ${meetingId} from ${user?.name || socket.id}: ${text}`);
     });
 
     socket.on('offer', ({ offer, targetSocketId }) => {
