@@ -64,7 +64,7 @@ export const setupSignaling = (io) => {
         });
     });
 
-    // Allow clients to request chat history on demand (e.g., when Chat panel mounts)
+
     socket.on('get-chat-history', () => {
       const meetingId = socketToMeeting.get(socket.id);
       if (!meetingId) return;
@@ -85,7 +85,6 @@ export const setupSignaling = (io) => {
         });
     });
 
-    // In-meeting chat: broadcast a chat message to everyone in the meeting (including sender)
     socket.on('send-chat-message', async ({ text }) => {
       const meetingId = socketToMeeting.get(socket.id);
       const user = socketToUser.get(socket.id);
@@ -98,7 +97,7 @@ export const setupSignaling = (io) => {
         timestamp: Date.now(),
       };
 
-      // Persist to DB (best-effort; do not block broadcast on failure)
+
       try {
         await Meeting.updateOne(
           { meetingId },
@@ -117,7 +116,6 @@ export const setupSignaling = (io) => {
         logger.error('Failed to persist chat message', err?.message || err);
       }
 
-      // Emit to all participants in the room, including the sender
       io.to(meetingId).emit('chat-message', payload);
       logger.debug(`Chat in ${meetingId} from ${user?.name || socket.id}: ${text}`);
     });

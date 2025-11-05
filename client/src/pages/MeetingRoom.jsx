@@ -14,7 +14,6 @@ const SOCKET_SERVER_URL =
   import.meta.env.VITE_SOCKET_SERVER_URL || "http://localhost:5000";
 
 const MeetingRoom = () => {
-  // Reusable video tile (local or remote)
   const VideoTile = ({ stream, label, isLocal = false, avatarChar = 'U' }) => {
     const ref = React.useRef(null);
     const [hasVideo, setHasVideo] = useState(false);
@@ -25,25 +24,39 @@ const MeetingRoom = () => {
         el.srcObject = stream || null;
       }
 
-      const update = () => {
-        if (!stream) {
-          setHasVideo(false);
-          return;
-        }
+      const computeHasVideo = () => {
+        if (!stream) return false;
         const v = stream.getVideoTracks();
-        setHasVideo(v.length > 0 && v[0].enabled !== false);
+        if (!v.length) return false;
+        const t = v[0];
+        if (isLocal) {
+          return t.readyState === 'live' && t.enabled !== false;
+        }
+        return t.readyState === 'live' && t.muted === false;
       };
+
+      const update = () => setHasVideo(computeHasVideo());
 
       update();
 
       if (stream) {
         const onAdd = () => update();
         const onRemove = () => update();
+        const track = stream.getVideoTracks()[0];
+        const onMute = () => update();
+        const onUnmute = () => update();
+        const onEnded = () => update();
         stream.addEventListener?.('addtrack', onAdd);
         stream.addEventListener?.('removetrack', onRemove);
+        track?.addEventListener?.('mute', onMute);
+        track?.addEventListener?.('unmute', onUnmute);
+        track?.addEventListener?.('ended', onEnded);
         return () => {
           stream.removeEventListener?.('addtrack', onAdd);
           stream.removeEventListener?.('removetrack', onRemove);
+          track?.removeEventListener?.('mute', onMute);
+          track?.removeEventListener?.('unmute', onUnmute);
+          track?.removeEventListener?.('ended', onEnded);
         };
       }
     }, [stream]);
@@ -70,7 +83,6 @@ const MeetingRoom = () => {
       </div>
     );
   };
-    // Disable scrolling on mount, restore on unmount
     useEffect(() => {
       const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
@@ -85,7 +97,6 @@ const MeetingRoom = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Meeting controls state
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [showCaptions, setShowCaptions] = useState(false);
@@ -93,25 +104,24 @@ const MeetingRoom = () => {
   const [selectedLanguage, setSelectedLanguage] = useState("en");
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
-  const [activePanel, setActivePanel] = useState(null); // 'chat' | 'users' | null
+  const [activePanel, setActivePanel] = useState(null);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
 
-  // Video refs
   const localVideoRef = useRef(null);
-  // Media stream state
-  const [mediaStream, setMediaStream] = useState(null);
-  // Socket and WebRTC
-  const [socket, setSocket] = useState(null);
-  const [participants, setParticipants] = useState([]); // {socketId, userId, userName}
-  const [remoteStreams, setRemoteStreams] = useState({}); // {socketId: MediaStream}
-  const peerConnections = useRef({}); // {socketId: RTCPeerConnection}
-  const iceServers = useRef(null);
 
-  // End meeting state
+  const [mediaStream, setMediaStream] = useState(null);
+ 
+  const [socket, setSocket] = useState(null);
+  const [participants, setParticipants] = useState([]);
+  const [remoteStreams, setRemoteStreams] = useState({}); 
+  const peerConnections = useRef({}); 
+  const iceServers = useRef(null);
+  const [selfSocketId, setSelfSocketId] = useState(null);
+
   const [endingMeeting, setEndingMeeting] = useState(false);
   const [meetingEnded, setMeetingEnded] = useState(false);
   const [endMeetingError, setEndMeetingError] = useState("");
-  // End Meeting handler
+
   const handleEndMeeting = async () => {
     setEndingMeeting(true);
     setEndMeetingError("");
@@ -119,13 +129,13 @@ const MeetingRoom = () => {
       const result = await meetingService.endMeeting(meetingId);
       if (result.success) {
         setMeetingEnded(true);
-        // Optionally update meeting status in state
+    
         setMeeting(result.meeting);
-        // Stop media tracks
+ 
         if (mediaStream) {
           mediaStream.getTracks().forEach((track) => track.stop());
         }
-        // Redirect after short delay
+    
         setTimeout(() => {
           navigate("/dashboard");
         }, 2000);
@@ -138,7 +148,6 @@ const MeetingRoom = () => {
     setEndingMeeting(false);
   };
 
-  // Control handlers
   const toggleMute = () => {
     if (mediaStream) {
       mediaStream.getAudioTracks().forEach((track) => {
@@ -155,11 +164,11 @@ const MeetingRoom = () => {
           track.enabled = !isVideoOn;
         });
       }
-      // Always restore srcObject if turning on
+
       if (!isVideoOn && localVideoRef.current) {
         localVideoRef.current.srcObject = mediaStream;
       }
-      // Always clear srcObject if turning off
+  
       if (isVideoOn && localVideoRef.current) {
         localVideoRef.current.srcObject = null;
       }
@@ -169,11 +178,11 @@ const MeetingRoom = () => {
   const toggleCaptions = () => {
     setShowCaptions((prev) => !prev);
   };
-  // Real-time audio recording and caption fetching
+
   useEffect(() => {
     let intervalId;
     if (showCaptions && mediaStream) {
-      // Only record audio
+   
       const audioStream = new MediaStream(mediaStream.getAudioTracks());
       let mimeType = '';
       if (MediaRecorder.isTypeSupported('audio/wav')) {
@@ -197,12 +206,11 @@ const MeetingRoom = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType || 'audio/webm' });
         console.log('Audio blob size:', audioBlob.size, 'bytes');
         audioChunksRef.current = [];
-        // Send audioBlob to backend for transcription
         const formData = new FormData();
         formData.append('audio', audioBlob, mimeType === 'audio/wav' ? 'audio.wav' : 'audio.webm');
         formData.append('language', selectedLanguage);
         formData.append('translate', selectedLanguage !== 'en' ? 'true' : 'false');
-        formData.append('meetingId', meetingId); // <-- Ensure meetingId is sent
+        formData.append('meetingId', meetingId); 
         try {
           const token = localStorage.getItem('token');
           const res = await axios.post('/api/whisper/transcribe', formData, {
@@ -212,7 +220,6 @@ const MeetingRoom = () => {
             },
           });
           if (res.data && res.data.captions && res.data.captions.length > 0) {
-            // Show last segment
             setCurrentCaption(res.data.captions[res.data.captions.length - 1].text);
           } else {
             setCurrentCaption('');
@@ -230,7 +237,7 @@ const MeetingRoom = () => {
           mediaRecorder.stop();
           mediaRecorder.start();
         }
-      }, 2000); // every 2 seconds
+      }, 2000);
     }
     return () => {
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
@@ -239,7 +246,7 @@ const MeetingRoom = () => {
       clearInterval(intervalId);
     };
   }, [showCaptions, mediaStream, selectedLanguage]);
-  // Screen sharing logic
+
   const screenStreamRef = useRef(null);
   const toggleScreenShare = async () => {
     if (!isScreenSharing) {
@@ -249,7 +256,7 @@ const MeetingRoom = () => {
         });
         screenStreamRef.current = screenStream;
         setIsScreenSharing(true);
-        // Replace video track in all peer connections
+       
         Object.values(peerConnections.current).forEach((pc) => {
           const sender = pc
             .getSenders()
@@ -258,18 +265,18 @@ const MeetingRoom = () => {
             sender.replaceTrack(screenStream.getVideoTracks()[0]);
           }
         });
-        // Replace local video
+  
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = screenStream;
         }
-        // Listen for screen share end
+   
         screenStream.getVideoTracks()[0].onended = () => {
           stopScreenShare();
         };
-        // Notify others (optional)
+      
         if (socket) socket.emit("start-screen-share");
       } catch (err) {
-        // User cancelled or error
+        console.error("Error starting screen share:", err);
       }
     } else {
       stopScreenShare();
@@ -282,7 +289,7 @@ const MeetingRoom = () => {
       screenStreamRef.current.getTracks().forEach((track) => track.stop());
       screenStreamRef.current = null;
     }
-    // Restore camera video track in all peer connections
+   
     if (mediaStream) {
       Object.values(peerConnections.current).forEach((pc) => {
         const sender = pc
@@ -292,23 +299,23 @@ const MeetingRoom = () => {
           sender.replaceTrack(mediaStream.getVideoTracks()[0]);
         }
       });
-      // Restore local video
+   
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = mediaStream;
       }
     }
-    // Notify others (optional)
+  
     if (socket) socket.emit("stop-screen-share");
   };
 
   useEffect(() => {
-    // Listen for screen share events from others
+  
     if (socket) {
       socket.on("user-started-screen-share", ({ socketId }) => {
-        // Optionally highlight remote video or show indicator
+   
       });
       socket.on("user-stopped-screen-share", ({ socketId }) => {
-        // Optionally remove highlight/indicator
+     
       });
     }
     if (authLoading) return;
@@ -318,7 +325,6 @@ const MeetingRoom = () => {
     }
     setLoading(false);
 
-    // Start media and connect socket
     let isMounted = true;
     let localStream;
     const startMediaAndSocket = async () => {
@@ -332,37 +338,45 @@ const MeetingRoom = () => {
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = localStream;
         }
-        // Connect socket
+  
         const sock = io(SOCKET_SERVER_URL, { transports: ["websocket"] });
         setSocket(sock);
+        // Capture our own socket id so we can filter ourselves from remote lists
+        sock.on("connect", () => {
+          setSelfSocketId(sock.id);
+        });
 
-        // Join meeting
+
         sock.emit("join-meeting", {
           meetingId,
           userId: user?._id,
           userName: user?.name || "User",
         });
 
-        // ICE servers config
+     
         sock.on("ice-servers", (config) => {
           iceServers.current = config;
         });
 
-        // Existing participants
+  
         sock.on("existing-participants", (existing) => {
-          setParticipants(existing);
-          // Create peer connections for existing participants
-          existing.forEach((p) => {
+          // De-duplicate by socketId and exclude self defensively
+          const uniq = Array.from(new Map(existing.map(p => [p.socketId, p])).values())
+            .filter(p => p.socketId !== selfSocketId);
+          setParticipants(uniq);
+
+          uniq.forEach((p) => {
             createPeerConnection(p.socketId, localStream, sock, true);
           });
         });
 
-        // New user joined
         sock.on("user-joined", (data) => {
-          setParticipants((prev) =>
-            prev.some((p) => p.socketId === data.socketId) ? prev : [...prev, data]
-          );
-          // Existing participants should NOT be initiators; let the new user initiate
+          if (data.socketId === selfSocketId) return;
+          setParticipants((prev) => {
+            const next = prev.some((p) => p.socketId === data.socketId) ? prev : [...prev, data];
+            return Array.from(new Map(next.map(p => [p.socketId, p])).values());
+          });
+
           createPeerConnection(data.socketId, localStream, sock, false);
         });
 
@@ -392,7 +406,6 @@ const MeetingRoom = () => {
           }
         });
 
-        // ICE candidate
         sock.on("ice-candidate", async ({ candidate, fromSocketId }) => {
           if (peerConnections.current[fromSocketId]) {
             try {
@@ -403,7 +416,6 @@ const MeetingRoom = () => {
           }
         });
 
-        // User left
         sock.on("user-left", ({ socketId }) => {
           setParticipants((prev) =>
             prev.filter((p) => p.socketId !== socketId)
@@ -419,7 +431,6 @@ const MeetingRoom = () => {
           });
         });
 
-        // Clean up on leave/disconnect
         sock.on("disconnect", () => {
           Object.values(peerConnections.current).forEach((pc) => pc.close());
           peerConnections.current = {};
@@ -444,29 +455,27 @@ const MeetingRoom = () => {
       peerConnections.current = {};
       setRemoteStreams({});
     };
-    // eslint-disable-next-line
+
   }, [authLoading, isAuthenticated, meetingId, navigate, user]);
 
-  // Create peer connection
   const createPeerConnection = (socketId, localStream, sock, isInitiator) => {
     if (peerConnections.current[socketId]) return;
     const rtcConfig =
       iceServers.current || { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
     const pc = new RTCPeerConnection(rtcConfig);
     peerConnections.current[socketId] = pc;
-    // Add local tracks
+
     localStream.getTracks().forEach((track) => {
       pc.addTrack(track, localStream);
     });
-    // Remote stream
+
     pc.ontrack = (event) => {
       const inboundStream = event.streams && event.streams[0] ? event.streams[0] : null;
       if (inboundStream) {
-        // Use the provided stream identity so downstream effects re-run
         setRemoteStreams((prev) => ({ ...prev, [socketId]: inboundStream }));
       }
     };
-    // ICE candidates
+
     pc.onicecandidate = (event) => {
       if (event.candidate) {
         sock.emit("ice-candidate", {
@@ -475,7 +484,7 @@ const MeetingRoom = () => {
         });
       }
     };
-    // If initiator, create offer
+
     if (isInitiator) {
       pc.onnegotiationneeded = async () => {
         try {
@@ -487,7 +496,6 @@ const MeetingRoom = () => {
     }
   };
 
-  // Handle chat message send
   const handleSendMessage = (e) => {
     if (e) e.preventDefault();
     if (newMessage.trim()) {
@@ -594,14 +602,14 @@ const MeetingRoom = () => {
       />
 
       <div className="flex-1 flex mt-20">
-        {/* Split layout: left for video, right for panel */}
+    
         <div className="flex w-full h-[calc(100vh-96px-72px)]">
-          {/* Left: Video Call */}
+         
           <div className="flex-1 flex items-stretch justify-center bg-transparent h-full relative p-4 overflow-hidden">
-            {/* Dynamic grid of all videos (local + remote) fills available space */}
+        
             {(() => {
               const tiles = [];
-              // Local first
+        
               tiles.push({
                 key: 'local',
                 stream: mediaStream,
@@ -609,8 +617,13 @@ const MeetingRoom = () => {
                 isLocal: true,
                 avatarChar: user?.name?.[0] || 'U',
               });
-              // Remote tiles in stable order based on participants array
-              participants.forEach((p) => {
+   
+              // Ensure unique participant list and exclude self defensively
+              const uniqueParticipants = Array.from(
+                new Map(participants.map((p) => [p.socketId, p])).values()
+              ).filter((p) => p.socketId !== selfSocketId);
+
+              uniqueParticipants.forEach((p) => {
                 const s = remoteStreams[p.socketId];
                 tiles.push({
                   key: p.socketId,
@@ -632,6 +645,23 @@ const MeetingRoom = () => {
                 return 5; // larger rooms
               };
               const cols = getCols(count);
+
+              // If only the local user is present, show a smaller centered preview
+              if (count === 1) {
+                const t = tiles[0];
+                return (
+                  <div className="w-full h-full flex items-center justify-center overflow-auto">
+                    <div className="w-full max-w-[980px]" style={{ aspectRatio: '16 / 9' }}>
+                      <VideoTile
+                        stream={t.stream}
+                        label={t.label}
+                        isLocal={t.isLocal}
+                        avatarChar={t.avatarChar}
+                      />
+                    </div>
+                  </div>
+                );
+              }
 
               return (
                 <div className="w-full h-full overflow-auto">

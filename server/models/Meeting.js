@@ -70,7 +70,7 @@ const meetingSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-  // Persisted in-meeting chat messages
+ 
   messages: [
     {
       sender: { type: mongoose.Schema.ObjectId, ref: 'User' },
@@ -81,7 +81,7 @@ const meetingSchema = new mongoose.Schema({
   ],
 });
 
-// Create index for efficient queries
+
 meetingSchema.index({ meetingId: 1 });
 meetingSchema.index({ host: 1 });
 meetingSchema.index({ 'participants.user': 1 });

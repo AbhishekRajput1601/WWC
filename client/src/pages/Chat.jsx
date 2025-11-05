@@ -51,7 +51,7 @@ const Chat = ({ socket: externalSocket }) => {
   }, [externalSocket]);
 
   useEffect(() => {
-    // Wait for auth to finish loading
+ 
     if (authLoading) {
       return;
     }
@@ -64,15 +64,15 @@ const Chat = ({ socket: externalSocket }) => {
     setLoading(false);
   }, [authLoading, isAuthenticated, meetingId, navigate]);
 
-  // Handle chat message send
+
   const handleSendMessage = (e) => {
     if (e) e.preventDefault();
     if (!newMessage.trim()) return;
-    // Emit through socket so everyone (including sender) receives the same event
+ 
     if (externalSocket) {
       externalSocket.emit("send-chat-message", { text: newMessage });
     } else {
-      // Fallback: local echo so UI isn't empty if socket missing
+
       setMessages((prev) => [
         ...prev,
         {

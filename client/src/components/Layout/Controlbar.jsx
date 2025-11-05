@@ -20,7 +20,8 @@ const Controlbar = ({
 			<div className="flex items-center justify-center space-x-4">
 				{/* Microphone Toggle */}
 				<button
-					onClick={toggleMute}
+					type="button"
+					onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleMute(); }}
 					className={`p-2 rounded-xl font-medium transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-black ${
 						isMuted
 							? "bg-gray-200 text-black"
@@ -54,7 +55,8 @@ const Controlbar = ({
 
 				{/* Video Toggle */}
 				<button
-					onClick={toggleVideo}
+					type="button"
+					onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleVideo(); }}
 					className={`p-2 rounded-xl font-medium transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-black ${
 						!isVideoOn
 							? "bg-gray-200 text-black"
@@ -88,7 +90,8 @@ const Controlbar = ({
 
 				{/* Captions Toggle */}
 				<button
-					onClick={toggleCaptions}
+					type="button"
+					onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleCaptions(); }}
 					className={`px-3 py-2 rounded-xl font-semibold transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-black ${
 						showCaptions
 							? "bg-gray-200 text-black"
@@ -120,7 +123,7 @@ const Controlbar = ({
 					</label>
 					<select
 						value={selectedLanguage}
-						onChange={(e) => setSelectedLanguage(e.target.value)}
+						onChange={(e) => { e.stopPropagation(); setSelectedLanguage(e.target.value); }}
 						className="bg-white border border-neutral-200 text-neutral-900 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-wwc-500 focus:border-wwc-500 transition-all duration-200 text-xs"
 					>
 						<option value="en">English</option>
@@ -134,7 +137,8 @@ const Controlbar = ({
 
 				{/* Screen Share */}
 				<button
-					onClick={toggleScreenShare}
+					type="button"
+					onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleScreenShare(); }}
 					className={`p-2 rounded-xl font-medium transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-black ${
 						isScreenSharing
 							? "bg-gray-200 text-black"
@@ -158,7 +162,8 @@ const Controlbar = ({
 				</button>
 				{/* End Meeting Button */}
 				<button
-					onClick={handleEndMeeting}
+					type="button"
+					onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEndMeeting(); }}
 					disabled={endingMeeting}
 					className="px-5 py-2 rounded-xl font-bold bg-error-600 text-white shadow-soft border-2 border-error-700 hover:bg-error-700 transition-all duration-200"
 					title="End Meeting"
