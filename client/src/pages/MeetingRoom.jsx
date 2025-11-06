@@ -61,52 +61,47 @@ const MeetingRoom = () => {
       }
     }, [stream]);
 
-    const getBorderWidth = () => {
-      if (participantCount <= 2) return 'border-4';
-      if (participantCount <= 6) return 'border-3';
-      if (participantCount <= 12) return 'border-2';
-      return 'border';
+    const getCircleSize = () => {
+      if (participantCount <= 2) return 'w-80 h-80';
+      if (participantCount <= 6) return 'w-60 h-60';
+      if (participantCount <= 12) return 'w-40 h-40';
+      return 'w-28 h-28';
     };
 
     const getAvatarSize = () => {
-      if (participantCount <= 2) return 'w-24 h-24 text-4xl';
-      if (participantCount <= 6) return 'w-20 h-20 text-3xl';
-      if (participantCount <= 12) return 'w-16 h-16 text-2xl';
-      return 'w-12 h-12 text-xl';
+      if (participantCount <= 2) return 'text-4xl';
+      if (participantCount <= 6) return 'text-3xl';
+      if (participantCount <= 12) return 'text-2xl';
+      return 'text-xl';
     };
 
     const getLabelSize = () => {
-      if (participantCount <= 4) return 'text-xs px-3 py-1.5';
-      if (participantCount <= 9) return 'text-[10px] px-2 py-1';
-      return 'text-[9px] px-2 py-0.5';
-    };
-
-    const getMinHeight = () => {
-      if (participantCount <= 2) return 'min-h-[220px]';
-      if (participantCount <= 6) return 'min-h-[180px]';
-      if (participantCount <= 12) return 'min-h-[140px]';
-      return 'min-h-[100px]';
+      if (participantCount <= 4) return 'text-xs px-2 py-1';
+      if (participantCount <= 9) return 'text-[10px] px-2 py-0.5';
+      return 'text-[9px] px-1.5 py-0.5';
     };
 
     return (
-      <div className={`relative bg-black rounded-xl ${getBorderWidth()} border-white shadow-xl overflow-hidden w-full h-full ${getMinHeight()}`}>
-        <video
-          ref={ref}
-          autoPlay
-          playsInline
-          className="w-full h-full object-cover"
-          muted={isLocal}
-        />
-        {!hasVideo && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className={`${getAvatarSize()} bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-full flex items-center justify-center`}>
-              <span className="text-white font-bold">
-                {avatarChar}
-              </span>
+      <div className="flex flex-col items-center gap-2">
+        <div className={`relative ${getCircleSize()} bg-black rounded-full border-4 border-white shadow-xl overflow-hidden flex-shrink-0`}>
+          <video
+            ref={ref}
+            autoPlay
+            playsInline
+            className="w-full h-full object-cover"
+            muted={isLocal}
+          />
+          {!hasVideo && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className={`bg-gradient-to-br from-wwc-600 to-wwc-700 w-full h-full rounded-full flex items-center justify-center`}>
+                <span className={`text-white font-bold ${getAvatarSize()}`}>
+                  {avatarChar}
+                </span>
+              </div>
             </div>
-          </div>
-        )}
-        <div className={`absolute bottom-2 left-2 bg-white/85 text-neutral-900 ${getLabelSize()} rounded-lg font-semibold shadow`}>
+          )}
+        </div>
+        <div className={`bg-white/90 text-neutral-900 ${getLabelSize()} rounded-lg font-semibold shadow whitespace-nowrap`}>
           {label}
         </div>
       </div>
@@ -757,59 +752,12 @@ const MeetingRoom = () => {
 
               const count = tiles.length;
               
-              const getLayout = (n) => {
-                if (n <= 1) return { cols: 1, maxWidth: '980px', gap: 'gap-4' };
-                if (n === 2) return { cols: 2, maxWidth: '100%', gap: 'gap-4' };
-                if (n <= 4) return { cols: 2, maxWidth: '100%', gap: 'gap-3' };
-                if (n <= 6) return { cols: 3, maxWidth: '100%', gap: 'gap-3' };
-                if (n <= 9) return { cols: 3, maxWidth: '100%', gap: 'gap-2' };
-                if (n <= 12) return { cols: 4, maxWidth: '100%', gap: 'gap-2' };
-                if (n <= 16) return { cols: 4, maxWidth: '100%', gap: 'gap-2' };
-                return { cols: 5, maxWidth: '100%', gap: 'gap-1' };
-              };
-              
-              const layout = getLayout(count);
-              const cols = layout.cols;
-              const maxRows = count <= 4 ? 2 : count <= 9 ? 3 : 4;
-              const maxVisible = cols * maxRows;
-              const visibleTiles = tiles.slice(0, Math.min(count, maxVisible));
-              const hidden = count - visibleTiles.length;
-  
-              if (count === 1) {
-                const t = tiles[0];
-                return (
-                  <div className="w-full h-full flex items-center justify-center overflow-hidden">
-                    <div
-                      className="w-full max-w-[980px]"
-                      style={{ aspectRatio: "16 / 9" }}
-                    >
-                      <VideoTile
-                        stream={t.stream}
-                        label={t.label}
-                        isLocal={t.isLocal}
-                        avatarChar={t.avatarChar}
-                        participantCount={count}
-                      />
-                    </div>
-                  </div>
-                );
-              }
+              // Display all participants in a horizontal row with connecting lines
               return (
-                <div className="w-full h-full overflow-auto p-2">
-                  <div
-                    className={`relative grid ${layout.gap} items-center justify-center content-center min-h-full`}
-                    style={{
-                      gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-                      maxWidth: layout.maxWidth,
-                      margin: '0 auto'
-                    }}
-                  >
-                    {visibleTiles.map((t) => (
-                      <div
-                        key={t.key}
-                        className="w-full"
-                        style={{ aspectRatio: "16 / 9" }}
-                      >
+                <div className="w-full h-full flex items-center justify-center overflow-auto p-4">
+                  <div className="flex items-center justify-center gap-0">
+                    {tiles.map((t, index) => (
+                      <React.Fragment key={t.key}>
                         <VideoTile
                           stream={t.stream}
                           label={t.label}
@@ -817,14 +765,14 @@ const MeetingRoom = () => {
                           avatarChar={t.avatarChar}
                           participantCount={count}
                         />
-                      </div>
+                        {index < tiles.length - 1 && (
+                          <div className="flex items-center px-6">
+                            <div className="w-16 h-1 bg-black"></div>
+                          </div>
+                        )}
+                      </React.Fragment>
                     ))}
                   </div>
-                  {hidden > 0 && (
-                    <div className="fixed bottom-24 right-8 w-16 h-16 rounded-full bg-white/90 border-2 border-neutral-300 shadow-hard flex items-center justify-center text-neutral-900 font-semibold z-10">
-                      +{hidden}
-                    </div>
-                  )}
                 </div>
               );
             })()}
