@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import api from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -7,7 +7,56 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [meetings, setMeetings] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
-  const [addUserStatus, setAddUserStatus] = useState({}); 
+  const [addUserStatus, setAddUserStatus] = useState({});
+
+  const stats = useMemo(() => {
+    const totalUsers = users.length;
+    const adminUsers = users.filter(u => u.role === 'admin').length;
+    const regularUsers = users.filter(u => u.role === 'user').length;
+    
+    const totalMeetings = meetings.length;
+    const scheduledMeetings = meetings.filter(m => m.status === 'scheduled').length;
+    const activeMeetings = meetings.filter(m => m.status === 'active').length;
+    const endedMeetings = meetings.filter(m => m.status === 'ended').length;
+    
+    const totalParticipants = meetings.reduce((sum, m) => 
+      sum + (m.participants?.length || 0), 0);
+    const activeParticipants = meetings.reduce((sum, m) => 
+      sum + (m.participants?.filter(p => p.isActive).length || 0), 0);
+
+    const last7Days = [];
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      date.setHours(0, 0, 0, 0);
+      const nextDay = new Date(date);
+      nextDay.setDate(nextDay.getDate() + 1);
+      
+      const count = meetings.filter(m => {
+        const meetingDate = new Date(m.createdAt);
+        return meetingDate >= date && meetingDate < nextDay;
+      }).length;
+      
+      last7Days.push({
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        count
+      });
+    }
+
+    return {
+      totalUsers,
+      adminUsers,
+      regularUsers,
+      totalMeetings,
+      scheduledMeetings,
+      activeMeetings,
+      endedMeetings,
+      totalParticipants,
+      activeParticipants,
+      last7Days
+    };
+  }, [users, meetings]); 
 
   useEffect(() => {
     if (!isAuthenticated || loading) return;
@@ -94,12 +143,220 @@ const AdminDashboard = () => {
 
   return (
     <div className="max-w-7xl mx-auto py-10 px-4">
-      <h1 className="text-4xl font-bold text-neutral-900 mb-8">
+      <h1 className="text-4xl font-bold text-neutral-900 mb-2">
         Admin Dashboard
       </h1>
-      <h2 className="text-lg font-medium text-neutral-700 mb-2">
+      <h2 className="text-lg font-medium text-neutral-700 mb-8">
         Logged in as: {user?.name} ({user?.role})
       </h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    
+        <div className="bg-gradient-to-br from-wwc-500 to-wwc-600 rounded-2xl shadow-medium p-6 text-white">
+          <div className="flex items-center justify-between mb-4">
+            <div className="bg-white/20 rounded-xl p-3">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+            <span className="text-3xl font-bold">{stats.totalUsers}</span>
+          </div>
+          <h3 className="text-sm font-medium opacity-90">Total Users</h3>
+          <p className="text-xs opacity-75 mt-1">
+            {stats.adminUsers} admins, {stats.regularUsers} users
+          </p>
+        </div>
+
+        <div className="bg-gradient-to-br from-accent-500 to-accent-600 rounded-2xl shadow-medium p-6 text-white">
+          <div className="flex items-center justify-between mb-4">
+            <div className="bg-white/20 rounded-xl p-3">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <span className="text-3xl font-bold">{stats.totalMeetings}</span>
+          </div>
+          <h3 className="text-sm font-medium opacity-90">Total Meetings</h3>
+          <p className="text-xs opacity-75 mt-1">
+            {stats.activeMeetings} active, {stats.scheduledMeetings} scheduled
+          </p>
+        </div>
+
+        <div className="bg-gradient-to-br from-success-500 to-success-600 rounded-2xl shadow-medium p-6 text-white">
+          <div className="flex items-center justify-between mb-4">
+            <div className="bg-white/20 rounded-xl p-3">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <span className="text-3xl font-bold">{stats.activeParticipants}</span>
+          </div>
+          <h3 className="text-sm font-medium opacity-90">Active Participants</h3>
+          <p className="text-xs opacity-75 mt-1">
+            {stats.totalParticipants} total participants
+          </p>
+        </div>
+
+        <div className="bg-gradient-to-br from-neutral-500 to-neutral-600 rounded-2xl shadow-medium p-6 text-white">
+          <div className="flex items-center justify-between mb-4">
+            <div className="bg-white/20 rounded-xl p-3">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <span className="text-3xl font-bold">{stats.endedMeetings}</span>
+          </div>
+          <h3 className="text-sm font-medium opacity-90">Ended Meetings</h3>
+          <p className="text-xs opacity-75 mt-1">
+            Completed sessions
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+     
+        <div className="bg-white rounded-2xl shadow-medium border border-neutral-100 p-6">
+          <h2 className="text-xl font-bold text-neutral-900 mb-6">Meeting Status Distribution</h2>
+          <div className="flex items-center justify-center">
+            <div className="relative w-48 h-48">
+              {stats.totalMeetings > 0 ? (
+                <>
+                  <svg className="w-48 h-48 transform -rotate-90" viewBox="0 0 100 100">
+                    {(() => {
+                      const scheduled = (stats.scheduledMeetings / stats.totalMeetings) * 100;
+                      const active = (stats.activeMeetings / stats.totalMeetings) * 100;
+                      const ended = (stats.endedMeetings / stats.totalMeetings) * 100;
+                      
+                      let currentAngle = 0;
+                      const createSlice = (percentage, color) => {
+                        const angle = (percentage / 100) * 360;
+                        const startAngle = currentAngle;
+                        const endAngle = currentAngle + angle;
+                        currentAngle = endAngle;
+                        
+                        const startRad = (startAngle - 90) * Math.PI / 180;
+                        const endRad = (endAngle - 90) * Math.PI / 180;
+                        
+                        const x1 = 50 + 45 * Math.cos(startRad);
+                        const y1 = 50 + 45 * Math.sin(startRad);
+                        const x2 = 50 + 45 * Math.cos(endRad);
+                        const y2 = 50 + 45 * Math.sin(endRad);
+                        
+                        const largeArc = angle > 180 ? 1 : 0;
+                        
+                        return `M 50 50 L ${x1} ${y1} A 45 45 0 ${largeArc} 1 ${x2} ${y2} Z`;
+                      };
+                      
+                      return (
+                        <>
+                          {scheduled > 0 && <path d={createSlice(scheduled, '#3b82f6')} fill="#3b82f6" />}
+                          {active > 0 && <path d={createSlice(active, '#10b981')} fill="#10b981" />}
+                          {ended > 0 && <path d={createSlice(ended, '#6b7280')} fill="#6b7280" />}
+                        </>
+                      );
+                    })()}
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="bg-white rounded-full w-20 h-20 flex items-center justify-center">
+                      <span className="text-2xl font-bold text-neutral-900">{stats.totalMeetings}</span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-48 text-neutral-400">
+                  No meetings yet
+                </div>
+              )}
+            </div>
+            <div className="ml-8 space-y-3">
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-blue-500 rounded mr-2"></div>
+                <span className="text-sm text-neutral-700">
+                  Scheduled ({stats.scheduledMeetings})
+                </span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-green-500 rounded mr-2"></div>
+                <span className="text-sm text-neutral-700">
+                  Active ({stats.activeMeetings})
+                </span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-gray-500 rounded mr-2"></div>
+                <span className="text-sm text-neutral-700">
+                  Ended ({stats.endedMeetings})
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+     
+        <div className="bg-white rounded-2xl shadow-medium border border-neutral-100 p-6">
+          <h2 className="text-xl font-bold text-neutral-900 mb-6">User Roles Distribution</h2>
+          <div className="h-48 flex items-end justify-around px-4">
+            <div className="flex flex-col items-center w-1/3">
+              <div className="w-full bg-wwc-100 rounded-t-lg overflow-hidden flex flex-col-reverse" style={{ height: '150px' }}>
+                <div 
+                  className="bg-gradient-to-t from-wwc-500 to-wwc-600 transition-all duration-500 flex items-end justify-center"
+                  style={{ 
+                    height: stats.totalUsers > 0 ? `${(stats.regularUsers / stats.totalUsers) * 100}%` : '0%',
+                    minHeight: stats.regularUsers > 0 ? '30px' : '0px'
+                  }}
+                >
+                  <span className="text-white font-bold text-lg mb-2">{stats.regularUsers}</span>
+                </div>
+              </div>
+              <span className="text-sm text-neutral-700 mt-2 font-medium">Regular Users</span>
+            </div>
+            <div className="flex flex-col items-center w-1/3">
+              <div className="w-full bg-accent-100 rounded-t-lg overflow-hidden flex flex-col-reverse" style={{ height: '150px' }}>
+                <div 
+                  className="bg-gradient-to-t from-accent-500 to-accent-600 transition-all duration-500 flex items-end justify-center"
+                  style={{ 
+                    height: stats.totalUsers > 0 ? `${(stats.adminUsers / stats.totalUsers) * 100}%` : '0%',
+                    minHeight: stats.adminUsers > 0 ? '30px' : '0px'
+                  }}
+                >
+                  <span className="text-white font-bold text-lg mb-2">{stats.adminUsers}</span>
+                </div>
+              </div>
+              <span className="text-sm text-neutral-700 mt-2 font-medium">Admins</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+ 
+      <div className="bg-white rounded-2xl shadow-medium border border-neutral-100 p-6 mb-8">
+        <h2 className="text-xl font-bold text-neutral-900 mb-6">Meeting Activity (Last 7 Days)</h2>
+        <div className="h-64 flex items-end justify-between px-4">
+          {stats.last7Days.map((day, index) => {
+            const maxCount = Math.max(...stats.last7Days.map(d => d.count), 1);
+            const heightPercent = (day.count / maxCount) * 100;
+            
+            return (
+              <div key={index} className="flex flex-col items-center flex-1 mx-1">
+                <div className="w-full flex flex-col items-center justify-end" style={{ height: '200px' }}>
+                  {day.count > 0 && (
+                    <span className="text-xs font-semibold text-wwc-700 mb-1">{day.count}</span>
+                  )}
+                  <div 
+                    className="w-full bg-gradient-to-t from-wwc-500 to-wwc-400 rounded-t-lg transition-all duration-500 hover:from-wwc-600 hover:to-wwc-500 cursor-pointer"
+                    style={{ 
+                      height: `${heightPercent}%`,
+                      minHeight: day.count > 0 ? '20px' : '0px'
+                    }}
+                    title={`${day.count} meetings on ${day.date}`}
+                  ></div>
+                </div>
+                <span className="text-xs text-neutral-600 mt-2 font-medium">{day.date}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="bg-white rounded-2xl shadow-medium border border-neutral-100 p-6 mb-8">
         <h2 className="text-2xl font-bold text-wwc-700 mb-4">All Users</h2>
         <div className="overflow-x-auto">
@@ -114,9 +371,9 @@ const AdminDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
+              {users.map((u, index) => (
                 <tr key={u._id} className="border-b">
-                  <td className="py-2 px-4">{u._id}</td>
+                  <td className="py-2 px-4">{index + 1}</td>
                   <td className="py-2 px-4">{u.name}</td>
                   <td className="py-2 px-4">{u.email}</td>
                   <td className="py-2 px-4">{u.role}</td>
@@ -150,11 +407,24 @@ const AdminDashboard = () => {
             <tbody>
               {meetings.map((m) => (
                 <tr key={m._id} className="border-b">
-                  <td className="py-2 px-4">{m.meetingId}</td>
+                  <td className="py-2 px-4">{m.meetingId?.split('-')[0] || m.meetingId}</td>
                   <td className="py-2 px-4">{m.title}</td>
                   <td className="py-2 px-4">{m.host?.name || m.host}</td>
                   <td className="py-2 px-4">{m.host?.email || ""}</td>
-                  <td className="py-2 px-4">{m.status}</td>
+                  <td className="py-2 px-4">
+                    {m.status === 'ended' ? (
+                      <span className="text-error-700 font-semibold">Ended</span>
+                    ) : m.status === 'scheduled' ? (
+                      <button
+                        onClick={() => window.location.href = `/meeting/${m.meetingId}`}
+                        className="bg-wwc-600 hover:bg-wwc-700 text-white font-medium py-1 px-4 rounded-lg transition-colors"
+                      >
+                        Join
+                      </button>
+                    ) : (
+                      m.status
+                    )}
+                  </td>
                   <td className="py-2 px-4">
                     {m.participants && m.participants.length > 0 ? (
                       <ul className="list-disc ml-4">

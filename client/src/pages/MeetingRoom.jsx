@@ -14,7 +14,7 @@ const SOCKET_SERVER_URL =
   import.meta.env.VITE_SOCKET_SERVER_URL || "http://localhost:5000";
 
 const MeetingRoom = () => {
-  const VideoTile = ({ stream, label, isLocal = false, avatarChar = "U" }) => {
+  const VideoTile = ({ stream, label, isLocal = false, avatarChar = "U", participantCount = 1 }) => {
     const ref = React.useRef(null);
     const [hasVideo, setHasVideo] = useState(false);
 
@@ -61,8 +61,35 @@ const MeetingRoom = () => {
       }
     }, [stream]);
 
+    const getBorderWidth = () => {
+      if (participantCount <= 2) return 'border-4';
+      if (participantCount <= 6) return 'border-3';
+      if (participantCount <= 12) return 'border-2';
+      return 'border';
+    };
+
+    const getAvatarSize = () => {
+      if (participantCount <= 2) return 'w-24 h-24 text-4xl';
+      if (participantCount <= 6) return 'w-20 h-20 text-3xl';
+      if (participantCount <= 12) return 'w-16 h-16 text-2xl';
+      return 'w-12 h-12 text-xl';
+    };
+
+    const getLabelSize = () => {
+      if (participantCount <= 4) return 'text-xs px-3 py-1.5';
+      if (participantCount <= 9) return 'text-[10px] px-2 py-1';
+      return 'text-[9px] px-2 py-0.5';
+    };
+
+    const getMinHeight = () => {
+      if (participantCount <= 2) return 'min-h-[220px]';
+      if (participantCount <= 6) return 'min-h-[180px]';
+      if (participantCount <= 12) return 'min-h-[140px]';
+      return 'min-h-[100px]';
+    };
+
     return (
-      <div className="relative bg-black rounded-2xl border-4 border-white shadow-xl overflow-hidden w-full h-full min-h-[220px]">
+      <div className={`relative bg-black rounded-xl ${getBorderWidth()} border-white shadow-xl overflow-hidden w-full h-full ${getMinHeight()}`}>
         <video
           ref={ref}
           autoPlay
@@ -72,14 +99,14 @@ const MeetingRoom = () => {
         />
         {!hasVideo && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-24 h-24 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-4xl">
+            <div className={`${getAvatarSize()} bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-full flex items-center justify-center`}>
+              <span className="text-white font-bold">
                 {avatarChar}
               </span>
             </div>
           </div>
         )}
-        <div className="absolute bottom-3 left-3 bg-white/85 text-neutral-900 px-3 py-1.5 rounded-xl text-xs font-semibold shadow">
+        <div className={`absolute bottom-2 left-2 bg-white/85 text-neutral-900 ${getLabelSize()} rounded-lg font-semibold shadow`}>
           {label}
         </div>
       </div>
@@ -360,7 +387,6 @@ const MeetingRoom = () => {
 
         const sock = io(SOCKET_SERVER_URL, { transports: ["websocket"] });
         setSocket(sock);
-        // Capture our own socket id so we can filter ourselves from remote lists
         sock.on("connect", () => {
           setSelfSocketId(sock.id);
         });
@@ -376,10 +402,10 @@ const MeetingRoom = () => {
         });
 
         sock.on("existing-participants", (existing) => {
-          // De-duplicate by socketId and exclude self defensively
+      
           const uniq = Array.from(
             new Map(existing.map((p) => [p.socketId, p])).values()
-          ).filter((p) => p.socketId !== selfSocketId);
+          ).filter((p) => p.socketId !== sock.id);
           setParticipants(uniq);
 
           uniq.forEach((p) => {
@@ -388,14 +414,16 @@ const MeetingRoom = () => {
         });
 
         sock.on("user-joined", (data) => {
-          if (data.socketId === selfSocketId) return;
+
+          if (data.socketId === sock.id) return;
+          
           setParticipants((prev) => {
-            const next = prev.some((p) => p.socketId === data.socketId)
-              ? prev
-              : [...prev, data];
-            return Array.from(
-              new Map(next.map((p) => [p.socketId, p])).values()
-            );
+        
+            const exists = prev.some((p) => p.socketId === data.socketId);
+            if (exists) {
+              return prev; 
+            }
+            return [...prev, data];
           });
 
           createPeerConnection(data.socketId, localStream, sock, false);
@@ -438,19 +466,24 @@ const MeetingRoom = () => {
         });
 
         sock.on("user-left", ({ socketId }) => {
+          console.log("User left:", socketId);
+          
+
           setParticipants((prev) =>
             prev.filter((p) => p.socketId !== socketId)
           );
+
           if (peerConnections.current[socketId]) {
             peerConnections.current[socketId].close();
             delete peerConnections.current[socketId];
           }
+ 
           setRemoteStreams((prev) => {
             const copy = { ...prev };
             delete copy[socketId];
             return copy;
           });
-          // If the leaver was the active screen sharer, reset shared-screen view
+
           setRemoteScreenSharerId((prev) => (prev === socketId ? null : prev));
         });
 
@@ -480,7 +513,6 @@ const MeetingRoom = () => {
     };
   }, [authLoading, isAuthenticated, meetingId, navigate, user]);
 
-  // Attach screen-share listeners when socket is ready (ensures others see your share too)
   useEffect(() => {
     if (!socket) return;
     const onStart = ({ socketId }) => setRemoteScreenSharerId(socketId);
@@ -655,17 +687,18 @@ const MeetingRoom = () => {
 
               const uniqueParticipants = Array.from(
                 new Map(participants.map((p) => [p.socketId, p])).values()
-              ).filter((p) => p.socketId !== selfSocketId);
-
+              ).filter((p) => p.socketId !== selfSocketId && p.socketId !== socket?.id);
               uniqueParticipants.forEach((p) => {
                 const s = remoteStreams[p.socketId];
-                tiles.push({
-                  key: p.socketId,
-                  stream: s,
-                  label: p.userName || "Participant",
-                  isLocal: false,
-                  avatarChar: (p.userName && p.userName[0]) || "P",
-                });
+                if (s) {
+                  tiles.push({
+                    key: p.socketId,
+                    stream: s,
+                    label: p.userName || "Participant",
+                    isLocal: false,
+                    avatarChar: (p.userName && p.userName[0]) || "P",
+                  });
+                }
               });
               const activeShareId = isScreenSharing
                 ? "local"
@@ -723,22 +756,25 @@ const MeetingRoom = () => {
               }
 
               const count = tiles.length;
-              const getCols = (n) => {
-                if (n <= 1) return 1;
-                if (n <= 2) return 2;
-                if (n <= 4) return 2; // 2x2 up to 4
-                if (n <= 6) return 3; // 3 columns for 5-6
-                if (n <= 9) return 3; // 3x3 up to 9
-                if (n <= 12) return 4; // 4 columns for 10-12
-                return 5; // larger rooms
+              
+              const getLayout = (n) => {
+                if (n <= 1) return { cols: 1, maxWidth: '980px', gap: 'gap-4' };
+                if (n === 2) return { cols: 2, maxWidth: '100%', gap: 'gap-4' };
+                if (n <= 4) return { cols: 2, maxWidth: '100%', gap: 'gap-3' };
+                if (n <= 6) return { cols: 3, maxWidth: '100%', gap: 'gap-3' };
+                if (n <= 9) return { cols: 3, maxWidth: '100%', gap: 'gap-2' };
+                if (n <= 12) return { cols: 4, maxWidth: '100%', gap: 'gap-2' };
+                if (n <= 16) return { cols: 4, maxWidth: '100%', gap: 'gap-2' };
+                return { cols: 5, maxWidth: '100%', gap: 'gap-1' };
               };
-              const cols = getCols(count);
-              const maxVisible = cols * Math.min(Math.ceil(count / cols), 3); // cap to 3 rows visible nicely
-              const visibleTiles = tiles.slice(
-                0,
-                Math.max(maxVisible, Math.min(count, 9))
-              );
+              
+              const layout = getLayout(count);
+              const cols = layout.cols;
+              const maxRows = count <= 4 ? 2 : count <= 9 ? 3 : 4;
+              const maxVisible = cols * maxRows;
+              const visibleTiles = tiles.slice(0, Math.min(count, maxVisible));
               const hidden = count - visibleTiles.length;
+  
               if (count === 1) {
                 const t = tiles[0];
                 return (
@@ -752,18 +788,20 @@ const MeetingRoom = () => {
                         label={t.label}
                         isLocal={t.isLocal}
                         avatarChar={t.avatarChar}
+                        participantCount={count}
                       />
                     </div>
                   </div>
                 );
               }
-
               return (
-                <div className="w-full h-full overflow-hidden">
+                <div className="w-full h-full overflow-auto p-2">
                   <div
-                    className="relative grid gap-4 items-center content-start"
+                    className={`relative grid ${layout.gap} items-center justify-center content-center min-h-full`}
                     style={{
                       gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                      maxWidth: layout.maxWidth,
+                      margin: '0 auto'
                     }}
                   >
                     {visibleTiles.map((t) => (
@@ -777,12 +815,13 @@ const MeetingRoom = () => {
                           label={t.label}
                           isLocal={t.isLocal}
                           avatarChar={t.avatarChar}
+                          participantCount={count}
                         />
                       </div>
                     ))}
                   </div>
                   {hidden > 0 && (
-                    <div className="absolute bottom-6 right-6 w-16 h-16 rounded-full bg-white/90 border-2 border-neutral-300 shadow-hard flex items-center justify-center text-neutral-900 font-semibold">
+                    <div className="fixed bottom-24 right-8 w-16 h-16 rounded-full bg-white/90 border-2 border-neutral-300 shadow-hard flex items-center justify-center text-neutral-900 font-semibold z-10">
                       +{hidden}
                     </div>
                   )}
