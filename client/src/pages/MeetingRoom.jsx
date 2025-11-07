@@ -83,12 +83,12 @@ const MeetingRoom = () => {
 
     return (
       <div className="flex flex-col items-center gap-2">
-        <div className={`relative ${getCircleSize()} bg-black rounded-full border-4 border-white shadow-xl overflow-hidden flex-shrink-0`}>
+        <div className={`relative ${getCircleSize()} rounded-full border-4 shadow-xl overflow-hidden flex-shrink-0`}>
           <video
             ref={ref}
             autoPlay
             playsInline
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover rounded-full"
             muted={isLocal}
           />
           {!hasVideo && (

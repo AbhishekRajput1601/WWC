@@ -172,7 +172,7 @@ const Chat = ({ socket: externalSocket }) => {
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
               placeholder="Type your message..."
-              className="flex-1 px-2 py-2 border-2 border-black rounded-xl text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-black focus:border-black transition-all duration-200 bg-neutral-50 shadow-sm text-sm"
+              className="flex-1 px-2 py-2 border-1 border-black rounded-xl text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-black focus:border-black transition-all duration-200 bg-neutral-50 shadow-sm text-sm"
             />
             <button
               type="submit"
@@ -184,7 +184,7 @@ const Chat = ({ socket: externalSocket }) => {
               }`}
             >
               <svg
-                className="w-4 h-4"
+                className="w-4 h-4 ml-3 text-green-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -196,7 +196,7 @@ const Chat = ({ socket: externalSocket }) => {
                   d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
                 />
               </svg>
-              <span className="ml-1">Send</span>
+              <span className="ml-1 text-green-400">Send</span>
             </button>
           </form>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import authService from "../../services/authService";
@@ -13,8 +13,19 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const { dispatch } = useAuth();
+  const { dispatch, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.name === "admin") {
+        navigate("/admin-dashboard", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleChange = (e) => {
     setFormData({
