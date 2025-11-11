@@ -1,6 +1,11 @@
 import Meeting from '../models/Meeting.js';
 import { v4 as uuidv4 } from 'uuid';
 import logger from '../utils/logger.js';
+import cloudinary from '../config/cloudinary.js';
+import { Readable } from 'stream';
+import fs from 'fs/promises';
+import os from 'os';
+import path from 'path';
 
 
 export const createMeeting = async (req, res) => {
@@ -301,4 +306,147 @@ export const deleteMeeting = async (req, res) => {
       message: 'Server error deleting meeting',
     });
   } 
+};
+
+
+export const uploadRecording = async (req, res) => {
+  try {
+    const { meetingId } = req.params;
+
+    const meeting = await Meeting.findOne({ meetingId });
+    if (!meeting) {
+      return res.status(404).json({ success: false, message: 'Meeting not found' });
+    }
+
+    
+    if (meeting.host.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Only the meeting host can upload recordings' });
+    }
+
+    const file = req.file;
+    if (!file || !file.buffer) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+
+    
+    meeting.recording = meeting.recording || {};
+    meeting.recording.status = 'processing';
+    await meeting.save();
+
+    const fileSizeBytes = file.buffer.length || file.size || 0;
+    logger.info(`Uploading recording for meeting ${meetingId}, size=${fileSizeBytes} bytes`);
+
+    const uploadOptions = {
+      resource_type: 'video',
+      folder: 'meetings',
+      use_filename: true,
+      unique_filename: true,
+      overwrite: false,
+      eager: [
+        { format: 'mp4', quality: 'auto:low', width: 144, crop: 'limit' }
+      ],
+    };
+
+    let uploadResult = null;
+
+    const MAX_IN_MEMORY = 10 * 1024 * 1024; // 10 MB
+    const RETRIES = 3;
+
+    if (fileSizeBytes > MAX_IN_MEMORY) {
+      const tmpDir = os.tmpdir();
+      const tmpFilename = `meeting-recording-${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`;
+      const tmpPath = path.join(tmpDir, tmpFilename);
+      await fs.writeFile(tmpPath, file.buffer);
+
+      try {
+        for (let attempt = 1; attempt <= RETRIES; attempt++) {
+          try {
+            logger.info(`Cloudinary upload attempt ${attempt} for ${tmpPath}`);
+            uploadResult = await new Promise((resolve, reject) => {
+              cloudinary.uploader.upload_large(
+                tmpPath,
+                { ...uploadOptions, chunk_size: 6000000 },
+                (err, result) => err ? reject(err) : resolve(result)
+              );
+            });
+            break;
+          } catch (err) {
+            logger.warn(`Cloudinary upload attempt ${attempt} failed: ${err && err.message}`);
+            if (attempt === RETRIES) throw err;
+            await new Promise(r => setTimeout(r, 1000 * attempt));
+          }
+        }
+      } finally {
+        try { await fs.unlink(tmpPath); } catch (e) {  }
+      }
+    } else {
+      uploadResult = await new Promise((resolve, reject) => {
+        const upload_stream = cloudinary.uploader.upload_stream(
+          uploadOptions,
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result);
+          }
+        );
+
+        const readableStream = new Readable();
+        readableStream._read = () => {};
+        readableStream.push(file.buffer);
+        readableStream.push(null);
+        readableStream.pipe(upload_stream);
+      });
+    }
+
+    meeting.recording.public_id = uploadResult.public_id;
+    meeting.recording.url_high = uploadResult.secure_url || uploadResult.url;
+    meeting.recording.url_low = (uploadResult.eager && uploadResult.eager[0] && uploadResult.eager[0].secure_url) || null;
+    meeting.recording.duration = uploadResult.duration || null;
+    meeting.recording.bytes = uploadResult.bytes || null;
+    meeting.recording.uploadedAt = new Date();
+    meeting.recording.uploadedBy = req.user.id;
+    meeting.recording.status = 'ready';
+
+    meeting.settings = meeting.settings || {};
+    meeting.settings.isRecording = true;
+
+    await meeting.save();
+
+    logger.info(`Recording uploaded for meeting ${meetingId} by ${req.user.email}`);
+
+    return res.status(200).json({ success: true, recording: meeting.recording });
+  } catch (error) {
+    logger.error('Upload recording error:', error);
+    try {
+      const { meetingId } = req.params;
+      const meeting = await Meeting.findOne({ meetingId });
+      if (meeting) {
+        meeting.recording = meeting.recording || {};
+        meeting.recording.status = 'failed';
+        await meeting.save();
+      }
+    } catch (e) {
+      logger.error('Failed to mark recording as failed:', e);
+    }
+
+    return res.status(500).json({ success: false, message: 'Server error uploading recording' });
+  }
+};
+
+export const getRecording = async (req, res) => {
+  try {
+    const { meetingId } = req.params;
+    const meeting = await Meeting.findOne({ meetingId });
+    if (!meeting) {
+      return res.status(404).json({ success: false, message: 'Meeting not found' });
+    }
+
+    if (!meeting.recording || !meeting.recording.public_id) {
+      return res.status(404).json({ success: false, message: 'No recording found for this meeting' });
+    }
+
+    return res.json({ success: true, recording: meeting.recording });
+  } catch (error) {
+    logger.error('Get recording error:', error);
+    return res.status(500).json({ success: false, message: 'Server error fetching recording' });
+  }
 };
