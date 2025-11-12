@@ -328,7 +328,6 @@ export const uploadRecording = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
 
-    // Ensure recordings array exists and add a placeholder entry with status 'processing'
     meeting.recordings = meeting.recordings || [];
     const placeholder = {
       public_id: null,

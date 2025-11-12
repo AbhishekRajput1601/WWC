@@ -195,7 +195,6 @@ class MeetingService {
 
       const response = await api.post(`/meetings/${meetingId}/recordings`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        // axios will fill Authorization header from api instance if configured
       });
 
       return { success: true, data: response.data };

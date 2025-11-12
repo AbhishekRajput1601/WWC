@@ -526,7 +526,6 @@ const AdminDashboard = () => {
                     )}
                   </td>
                       <td className="py-2 px-4">
-                        {/* Show compact Play control; clicking opens modal with recordings list */}
                         {((m.recordings && m.recordings.length > 0) || (m.recording && m.recording.public_id)) ? (
                           <button
                             onClick={() => openRecordings(m)}

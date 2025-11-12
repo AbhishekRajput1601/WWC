@@ -559,16 +559,13 @@ const MeetingRoom = () => {
   })();
 
   const startRecording = () => {
-    // Capture screen and mix with microphone audio
     if (!mediaStream) return alert('No media stream (microphone) available');
     (async () => {
       try {
         const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
 
         const mixedStream = new MediaStream();
-        // add screen video tracks
         screenStream.getVideoTracks().forEach((t) => mixedStream.addTrack(t));
-        // add microphone audio tracks if present
         if (mediaStream.getAudioTracks && mediaStream.getAudioTracks().length > 0) {
           mediaStream.getAudioTracks().forEach((t) => mixedStream.addTrack(t));
         }
@@ -584,7 +581,6 @@ const MeetingRoom = () => {
         }
 
         const mr = new MediaRecorder(mixedStream, options);
-        // store recorder and screen stream for cleanup
         mediaRecorderRefForRecording.current = { recorder: mr, screenStream };
 
         mr.ondataavailable = (e) => {
@@ -615,7 +611,6 @@ const MeetingRoom = () => {
           }
         };
 
-        // if user stops screen sharing from browser UI, stop the recorder
         const screenTrack = screenStream.getVideoTracks()[0];
         if (screenTrack) {
           screenTrack.addEventListener('ended', () => {
