@@ -23,27 +23,33 @@ export const setupCaptions = (io) => {
           const mockTranscription = await simulateTranscription(audioData);
 
           if (mockTranscription && mockTranscription.text) {
-            const caption = await Caption.create({
-              meetingId,
-              speaker: userId,
-              originalText: mockTranscription.text,
-              originalLanguage: language,
-              confidence: mockTranscription.confidence || 0.8,
-              isFinal: mockTranscription.isFinal || false,
-            });
-            io.to(meetingId).emit("new-caption", {
-              captionId: caption._id,
-              text: mockTranscription.text,
-              speakerId: userId,
-              language,
-              confidence: mockTranscription.confidence,
-              isFinal: mockTranscription.isFinal,
-              timestamp: caption.timestamp,
-            });
+      
+              const entry = {
+                speaker: userId,
+                originalText: mockTranscription.text,
+                originalLanguage: language,
+                confidence: mockTranscription.confidence || 0.8,
+                isFinal: mockTranscription.isFinal || false,
+                timestamp: new Date(),
+              };
+              const updated = await Caption.findOneAndUpdate(
+                { meetingId },
+                { $push: { captions: entry } },
+                { upsert: true, new: true }
+              );
+              const appended = updated.captions && updated.captions.length ? updated.captions[updated.captions.length - 1] : null;
 
-            logger.debug(
-              `Caption saved and broadcast for meeting ${meetingId}`
-            );
+              io.to(meetingId).emit("new-caption", {
+                captionId: appended?._id || null,
+                text: mockTranscription.text,
+                speakerId: userId,
+                language,
+                confidence: mockTranscription.confidence,
+                isFinal: mockTranscription.isFinal,
+                timestamp: appended ? appended.timestamp : entry.timestamp,
+              });
+
+              logger.debug(`Caption appended and broadcast for meeting ${meetingId}`);
           }
         } catch (error) {
           logger.error("Error processing audio data:", error);
@@ -53,12 +59,13 @@ export const setupCaptions = (io) => {
 
     socket.on("request-translation", async ({ captionId, targetLanguage }) => {
       try {
-        const caption = await Caption.findById(captionId);
-        if (!caption) {
-          return;
-        }
+        const doc = await Caption.findOne({ 'captions._id': captionId });
+        if (!doc) return;
 
-        const existingTranslation = caption.translations.find(
+        const caption = doc.captions.id(captionId);
+        if (!caption) return;
+
+        const existingTranslation = (caption.translations || []).find(
           (t) => t.language === targetLanguage
         );
 
@@ -77,12 +84,10 @@ export const setupCaptions = (io) => {
           targetLanguage
         );
 
-        caption.translations.push({
-          language: targetLanguage,
-          text: translatedText,
-          confidence: 0.85,
-        });
-        await caption.save();
+        caption.translations = caption.translations || [];
+        caption.translations.push({ language: targetLanguage, text: translatedText, confidence: 0.85 });
+
+        await doc.save();
 
         socket.emit("translation-result", {
           captionId,
@@ -114,7 +119,6 @@ const simulateTranscription = async (audioData) => {
       "Does anyone have questions?",
       "Thank you for your attention",
     ];
-
     return {
       text: mockPhrases[Math.floor(Math.random() * mockPhrases.length)],
       confidence: 0.8 + Math.random() * 0.2,

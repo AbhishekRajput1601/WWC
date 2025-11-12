@@ -894,7 +894,7 @@ const MeetingRoom = () => {
             })()}
 
             {showCaptions && (
-              <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 max-w-2xl z-50">
+              <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 max-w-2xl z-50">
                 <div className="bg-white/95 backdrop-blur-md text-neutral-900 px-6 py-3 rounded-2xl border border-neutral-200 shadow-medium min-h-[48px] flex items-center justify-center">
                   <p className="text-center font-medium">
                     {currentCaption ? (

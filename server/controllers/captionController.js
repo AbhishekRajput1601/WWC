@@ -70,42 +70,49 @@ export const transcribeAudioHandler = async (req, res) => {
       translatedCaptions = result.captions;
     }
 
-    // Save each caption segment to DB, log if missing info
     if (!meetingId) {
       logger.warn('No meetingId provided, captions will not be saved.');
     }
     if (!speaker) {
       logger.warn('No speaker (user) found, captions will not be saved.');
     }
-    // Filter out short/empty captions
-    const filteredCaptions = translatedCaptions.filter(seg => seg.text && seg.text.trim().length > 2);
-    if (filteredCaptions && Array.isArray(filteredCaptions)) {
-      let savedCount = 0;
-      for (const segment of filteredCaptions) {
-        if (meetingId && speaker) {
-          try {
-            const captionDoc = new Caption({
-              meetingId,
-              speaker,
-              originalText: segment.text,
-              originalLanguage: language || 'en',
-              translations: [],
-              confidence: segment.confidence || 0.8,
-              timestamp: segment.timestamp ? new Date(segment.timestamp) : new Date(),
-              duration: segment.duration || 0,
-              isFinal: segment.isFinal || true,
-            });
-            await captionDoc.save();
-            savedCount++;
-          } catch (err) {
-            logger.error('Error saving caption:', err);
-          }
-        }
-      }
-      logger.info(`Saved ${savedCount} captions for meetingId=${meetingId}`);
-    } else {
+
+    const filteredCaptions = (translatedCaptions || []).filter(
+      (seg) => seg.text && seg.text.trim().length > 2
+    );
+
+    if (!filteredCaptions.length) {
       logger.warn('No captions returned from Whisper, nothing to save.');
+      return res.json({ success: true, captions: [], language: language || 'en' });
     }
+
+    let savedCount = 0;
+    for (const segment of filteredCaptions) {
+      if (!meetingId || !speaker) continue;
+      try {
+        const entry = {
+          speaker,
+          originalText: segment.text,
+          originalLanguage: language || 'en',
+          translations: [],
+          confidence: segment.confidence || 0.8,
+          timestamp: segment.timestamp ? new Date(segment.timestamp) : new Date(),
+          duration: segment.duration || 0,
+          isFinal: segment.isFinal !== undefined ? !!segment.isFinal : true,
+        };
+
+        await Caption.findOneAndUpdate(
+          { meetingId },
+          { $push: { captions: entry } },
+          { upsert: true, new: true }
+        );
+        savedCount++;
+      } catch (err) {
+        logger.error('Error saving caption entry:', err);
+      }
+    }
+
+    logger.info(`Appended ${savedCount} captions for meetingId=${meetingId}`);
 
     res.json({ success: true, captions: filteredCaptions, language: language || 'en' });
   } catch (error) {
@@ -120,29 +127,29 @@ export const getMeetingCaptions = async (req, res) => {
     const { meetingId } = req.params;
     const { language, limit = 50, page = 1 } = req.query;
 
-    let query = { meetingId };
-  
-    if (language && language !== 'all') {
-      query.$or = [
-        { originalLanguage: language },
-        { 'translations.language': language }
-      ];
+    const doc = await Caption.findOne({ meetingId }).populate('captions.speaker', 'name email');
+    if (!doc) {
+      return res.json({ success: true, captions: [], pagination: { page: 1, limit: 0, total: 0 } });
     }
 
-    const captions = await Caption.find(query)
-      .populate('speaker', 'name email')
-      .sort({ timestamp: -1 })
-      .limit(parseInt(limit))
-      .skip((parseInt(page) - 1) * parseInt(limit));
+    let items = doc.captions || [];
+    if (language && language !== 'all') {
+      items = items.filter((c) => c.originalLanguage === language || (c.translations || []).some(t => t.language === language));
+    }
+
+
+    items = items.slice().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    const total = items.length;
+    const p = Math.max(1, parseInt(page));
+    const l = Math.max(1, parseInt(limit));
+    const start = (p - 1) * l;
+    const paged = items.slice(start, start + l);
 
     res.json({
       success: true,
-      captions,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total: await Caption.countDocuments(query)
-      }
+      captions: paged,
+      pagination: { page: p, limit: l, total }
     });
   } catch (error) {
     logger.error('Get meeting captions error:', error);
@@ -158,29 +165,26 @@ export const exportCaptions = async (req, res) => {
   try {
     const { meetingId } = req.params;
     const { language = 'original', format = 'txt' } = req.query;
-
-    const captions = await Caption.find({ meetingId })
-      .populate('speaker', 'name email')
-      .sort({ timestamp: 1 });
+    const doc = await Caption.findOne({ meetingId }).populate('captions.speaker', 'name email');
+    const items = doc ? (doc.captions || []) : [];
 
     let content = '';
     const timestamp = new Date().toISOString().split('T')[0];
 
     if (format === 'txt') {
       content = `Meeting Captions - ${meetingId}\nExported: ${timestamp}\n\n`;
-      
-      captions.forEach(caption => {
-        const time = caption.timestamp.toLocaleTimeString();
-        const speaker = caption.speaker.name;
-        
+
+  
+      items.slice().sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)).forEach((caption) => {
+        const time = new Date(caption.timestamp).toLocaleTimeString();
+        const speaker = caption.speaker ? caption.speaker.name : 'Unknown';
+
         let text = caption.originalText;
         if (language !== 'original' && language !== caption.originalLanguage) {
-          const translation = caption.translations.find(t => t.language === language);
-          if (translation) {
-            text = translation.text;
-          }
+          const translation = (caption.translations || []).find((t) => t.language === language);
+          if (translation) text = translation.text;
         }
-        
+
         content += `[${time}] ${speaker}: ${text}\n`;
       });
     }

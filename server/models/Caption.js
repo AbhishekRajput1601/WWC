@@ -1,12 +1,10 @@
 import mongoose from 'mongoose';
 
-const captionSchema = new mongoose.Schema({
-  meetingId: {
-    type: String,
-    required: true,
-  },
+const { Schema } = mongoose;
+
+const captionEntrySchema = new Schema({
   speaker: {
-    type: mongoose.Schema.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'User',
     required: true,
   },
@@ -19,45 +17,29 @@ const captionSchema = new mongoose.Schema({
     required: true,
     default: 'en',
   },
-  translations: [{
-    language: {
-      type: String,
-      required: true,
+  translations: [
+    {
+      language: { type: String, required: true },
+      text: { type: String, required: true },
+      confidence: { type: Number, min: 0, max: 1, default: 0.8 },
     },
-    text: {
-      type: String,
-      required: true,
-    },
-    confidence: {
-      type: Number,
-      min: 0,
-      max: 1,
-      default: 0.8,
-    },
-  }],
-  confidence: {
-    type: Number,
-    min: 0,
-    max: 1,
-    default: 0.8,
-  },
-  timestamp: {
-    type: Date,
-    default: Date.now,
-  },
-  duration: {
-    type: Number, // in milliseconds
-    default: 0,
-  },
-  isFinal: {
-    type: Boolean,
-    default: false,
-  },
+  ],
+  confidence: { type: Number, min: 0, max: 1, default: 0.8 },
+  timestamp: { type: Date, default: Date.now },
+  duration: { type: Number, default: 0 },
+  isFinal: { type: Boolean, default: false },
 });
 
-captionSchema.index({ meetingId: 1, timestamp: 1 });
-captionSchema.index({ speaker: 1 });
+const meetingCaptionsSchema = new Schema(
+  {
+    meetingId: { type: String, required: true, unique: true },
+    captions: { type: [captionEntrySchema], default: [] },
+  },
+  { timestamps: true }
+);
 
-const Caption = mongoose.model('Caption', captionSchema);
+meetingCaptionsSchema.index({ meetingId: 1 });
+
+const Caption = mongoose.model('Caption', meetingCaptionsSchema);
 
 export default Caption;
