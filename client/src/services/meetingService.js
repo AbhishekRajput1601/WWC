@@ -182,6 +182,27 @@ class MeetingService {
       };
     }
   }
+
+  /**
+   * Upload a recording blob for a meeting
+   * @param {string} meetingId
+   * @param {Blob|File} fileBlob
+   */
+  async uploadRecording(meetingId, fileBlob) {
+    try {
+      const formData = new FormData();
+      formData.append('file', fileBlob, `recording-${meetingId}.webm`);
+
+      const response = await api.post(`/meetings/${meetingId}/recordings`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        // axios will fill Authorization header from api instance if configured
+      });
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      return { success: false, message: error.response?.data?.message || 'Failed to upload recording', error: error.response?.data || error.message };
+    }
+  }
 }
 
 export default new MeetingService();

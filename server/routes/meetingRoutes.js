@@ -7,11 +7,13 @@ import {
   getMeeting,
   getUserMeetings,
   addUserInMeeting,
-  deleteMeeting
+  deleteMeeting,
+  uploadRecording,
+  getRecordings,
+  getRecording,
 } from '../controllers/meetingController.js';
 import { protect } from '../middleware/auth.js';
 import multer from 'multer';
-import { uploadRecording, getRecording } from '../controllers/meetingController.js';
 
 const upload = multer();
 
@@ -25,8 +27,10 @@ router.route('/')
 
 router.get('/:meetingId', getMeeting);
 // Recording endpoints (creator only enforced in controller)
-router.post('/:meetingId/recording', upload.single('file'), uploadRecording);
-router.get('/:meetingId/recording', getRecording);
+// Recording endpoints (creator only enforced in controller)
+router.post('/:meetingId/recordings', upload.single('file'), uploadRecording);
+router.get('/:meetingId/recordings', getRecordings);
+router.get('/:meetingId/recordings/:recordingId', getRecording);
 router.post('/:meetingId/join', joinMeeting);
 router.post('/:meetingId/leave', leaveMeeting);
 router.post('/:meetingId/end', endMeeting);

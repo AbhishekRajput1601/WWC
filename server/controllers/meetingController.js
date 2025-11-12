@@ -328,12 +328,26 @@ export const uploadRecording = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
 
-    
-    meeting.recording = meeting.recording || {};
-    meeting.recording.status = 'processing';
+    // Ensure recordings array exists and add a placeholder entry with status 'processing'
+    meeting.recordings = meeting.recordings || [];
+    const placeholder = {
+      public_id: null,
+      url_high: null,
+      url_low: null,
+      duration: null,
+      bytes: file.buffer.length || file.size || 0,
+      uploadedAt: new Date(),
+      uploadedBy: req.user.id,
+      status: 'processing',
+    };
+
+    meeting.recordings.push(placeholder);
     await meeting.save();
 
-    const fileSizeBytes = file.buffer.length || file.size || 0;
+    // keep reference to the pushed recording _id so we can update it after uploading
+    const pushedRecordingId = meeting.recordings[meeting.recordings.length - 1]._id;
+
+    const fileSizeBytes = placeholder.bytes || 0;
     logger.info(`Uploading recording for meeting ${meetingId}, size=${fileSizeBytes} bytes`);
 
     const uploadOptions = {
@@ -397,14 +411,18 @@ export const uploadRecording = async (req, res) => {
       });
     }
 
-    meeting.recording.public_id = uploadResult.public_id;
-    meeting.recording.url_high = uploadResult.secure_url || uploadResult.url;
-    meeting.recording.url_low = (uploadResult.eager && uploadResult.eager[0] && uploadResult.eager[0].secure_url) || null;
-    meeting.recording.duration = uploadResult.duration || null;
-    meeting.recording.bytes = uploadResult.bytes || null;
-    meeting.recording.uploadedAt = new Date();
-    meeting.recording.uploadedBy = req.user.id;
-    meeting.recording.status = 'ready';
+    // Update the pushed recording entry with actual upload result
+    const rec = meeting.recordings.id(pushedRecordingId);
+    if (rec) {
+      rec.public_id = uploadResult.public_id;
+      rec.url_high = uploadResult.secure_url || uploadResult.url;
+      rec.url_low = (uploadResult.eager && uploadResult.eager[0] && uploadResult.eager[0].secure_url) || null;
+      rec.duration = uploadResult.duration || null;
+      rec.bytes = uploadResult.bytes || rec.bytes || null;
+      rec.uploadedAt = new Date();
+      rec.uploadedBy = req.user.id;
+      rec.status = 'ready';
+    }
 
     meeting.settings = meeting.settings || {};
     meeting.settings.isRecording = true;
@@ -413,15 +431,18 @@ export const uploadRecording = async (req, res) => {
 
     logger.info(`Recording uploaded for meeting ${meetingId} by ${req.user.email}`);
 
-    return res.status(200).json({ success: true, recording: meeting.recording });
+    return res.status(200).json({ success: true, recording: rec });
   } catch (error) {
     logger.error('Upload recording error:', error);
     try {
       const { meetingId } = req.params;
       const meeting = await Meeting.findOne({ meetingId });
       if (meeting) {
-        meeting.recording = meeting.recording || {};
-        meeting.recording.status = 'failed';
+        // mark last pushed recording (if present) as failed
+        if (meeting.recordings && meeting.recordings.length > 0) {
+          const last = meeting.recordings[meeting.recordings.length - 1];
+          last.status = 'failed';
+        }
         await meeting.save();
       }
     } catch (e) {
@@ -432,19 +453,39 @@ export const uploadRecording = async (req, res) => {
   }
 };
 
-export const getRecording = async (req, res) => {
+export const getRecordings = async (req, res) => {
   try {
     const { meetingId } = req.params;
-    const meeting = await Meeting.findOne({ meetingId });
+    const meeting = await Meeting.findOne({ meetingId }).populate('recordings.uploadedBy', 'name email');
     if (!meeting) {
       return res.status(404).json({ success: false, message: 'Meeting not found' });
     }
 
-    if (!meeting.recording || !meeting.recording.public_id) {
-      return res.status(404).json({ success: false, message: 'No recording found for this meeting' });
+    return res.json({ success: true, recordings: meeting.recordings || [] });
+  } catch (error) {
+    logger.error('Get recordings error:', error);
+    return res.status(500).json({ success: false, message: 'Server error fetching recordings' });
+  }
+};
+
+export const getRecording = async (req, res) => {
+  try {
+    const { meetingId, recordingId } = req.params;
+    const meeting = await Meeting.findOne({ meetingId }).populate('recordings.uploadedBy', 'name email');
+    if (!meeting) {
+      return res.status(404).json({ success: false, message: 'Meeting not found' });
     }
 
-    return res.json({ success: true, recording: meeting.recording });
+    if (!recordingId) {
+      return res.status(400).json({ success: false, message: 'recordingId is required' });
+    }
+
+    const rec = meeting.recordings.id(recordingId);
+    if (!rec || !rec.public_id) {
+      return res.status(404).json({ success: false, message: 'Recording not found' });
+    }
+
+    return res.json({ success: true, recording: rec });
   } catch (error) {
     logger.error('Get recording error:', error);
     return res.status(500).json({ success: false, message: 'Server error fetching recording' });

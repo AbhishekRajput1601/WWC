@@ -130,7 +130,7 @@ const MeetingRoom = () => {
   const audioChunksRef = useRef([]);
   const [activePanel, setActivePanel] = useState(null);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
-  // track if someone else is sharing so we can switch to shared-screen layout
+
   const [remoteScreenSharerId, setRemoteScreenSharerId] = useState(null);
 
   const localVideoRef = useRef(null);
@@ -147,6 +147,9 @@ const MeetingRoom = () => {
   const [endingMeeting, setEndingMeeting] = useState(false);
   const [meetingEnded, setMeetingEnded] = useState(false);
   const [endMeetingError, setEndMeetingError] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRefForRecording = useRef(null);
+  const recordedChunksRef = useRef([]);
 
   const handleEndMeeting = async () => {
     setEndingMeeting(true);
@@ -351,6 +354,16 @@ const MeetingRoom = () => {
   };
 
   useEffect(() => {
+    const fetchMeeting = async () => {
+      try {
+        const res = await meetingService.getMeeting(meetingId);
+        if (res.success) setMeeting(res.meeting);
+      } catch (e) {
+        console.error('Failed to fetch meeting metadata', e);
+      }
+    };
+    fetchMeeting();
+
     if (socket) {
       socket.on("user-started-screen-share", ({ socketId }) => {
         setRemoteScreenSharerId(socketId);
@@ -520,6 +533,114 @@ const MeetingRoom = () => {
       socket.off("user-stopped-screen-share", onStop);
     };
   }, [socket]);
+
+  useEffect(() => {
+    const doFetch = async () => {
+      try {
+        const res = await meetingService.getMeeting(meetingId);
+        if (res.success) setMeeting(res.meeting);
+      } catch (e) {
+        console.log("error", e);
+      }
+    };
+    if (user) doFetch();
+  }, [user, meetingId]);
+
+  const isCreator = (() => {
+    if (!user || !meeting) return false;
+    const userId = String(user._id || user.id || user);
+    let hostId = null;
+    if (meeting.host) {
+      if (typeof meeting.host === 'string') hostId = meeting.host;
+      else if (meeting.host._id) hostId = String(meeting.host._id);
+      else hostId = String(meeting.host);
+    }
+    return hostId && String(hostId) === userId;
+  })();
+
+  const startRecording = () => {
+    // Capture screen and mix with microphone audio
+    if (!mediaStream) return alert('No media stream (microphone) available');
+    (async () => {
+      try {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+
+        const mixedStream = new MediaStream();
+        // add screen video tracks
+        screenStream.getVideoTracks().forEach((t) => mixedStream.addTrack(t));
+        // add microphone audio tracks if present
+        if (mediaStream.getAudioTracks && mediaStream.getAudioTracks().length > 0) {
+          mediaStream.getAudioTracks().forEach((t) => mixedStream.addTrack(t));
+        }
+
+        recordedChunksRef.current = [];
+        const options = {};
+        if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
+          options.mimeType = 'video/webm;codecs=vp9';
+        } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
+          options.mimeType = 'video/webm;codecs=vp8';
+        } else if (MediaRecorder.isTypeSupported('video/webm')) {
+          options.mimeType = 'video/webm';
+        }
+
+        const mr = new MediaRecorder(mixedStream, options);
+        // store recorder and screen stream for cleanup
+        mediaRecorderRefForRecording.current = { recorder: mr, screenStream };
+
+        mr.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) recordedChunksRef.current.push(e.data);
+        };
+
+        mr.onstart = () => setIsRecording(true);
+
+        mr.onstop = async () => {
+          setIsRecording(false);
+          // stop screen tracks
+          try { screenStream.getTracks().forEach((t) => t.stop()); } catch (e) {}
+
+          const blob = new Blob(recordedChunksRef.current, { type: recordedChunksRef.current[0]?.type || 'video/webm' });
+          recordedChunksRef.current = [];
+
+          try {
+            const uploadRes = await meetingService.uploadRecording(meetingId, blob);
+            if (uploadRes.success) {
+              console.log('Recording uploaded successfully');
+              const m = await meetingService.getMeeting(meetingId);
+              if (m.success) setMeeting(m.meeting);
+            } else {
+              console.error('Failed to upload recording:', uploadRes.message);
+            }
+          } catch (err) {
+            console.error('Upload error', err);
+          }
+        };
+
+        // if user stops screen sharing from browser UI, stop the recorder
+        const screenTrack = screenStream.getVideoTracks()[0];
+        if (screenTrack) {
+          screenTrack.addEventListener('ended', () => {
+            try {
+              const wrapped = mediaRecorderRefForRecording.current;
+              const rr = wrapped && wrapped.recorder ? wrapped.recorder : wrapped;
+              if (rr && rr.state !== 'inactive') rr.stop();
+            } catch (e) {}
+          });
+        }
+
+        mr.start(1000);
+      } catch (err) {
+        console.error('Start recording failed', err);
+        alert('Could not start screen recording: ' + (err.message || err));
+      }
+    })();
+  };
+
+  const stopRecording = () => {
+    const wrapped = mediaRecorderRefForRecording.current;
+    if (!wrapped) return;
+    const mr = wrapped.recorder ? wrapped.recorder : wrapped;
+    if (mr && mr.state !== 'inactive') mr.stop();
+  };
 
   const createPeerConnection = (socketId, localStream, sock, isInitiator) => {
     if (peerConnections.current[socketId]) return;
@@ -813,7 +934,7 @@ const MeetingRoom = () => {
       </div>
 
       {/* Control Bar */}
-      <Controlbar
+  <Controlbar
         isMuted={isMuted}
         isVideoOn={isVideoOn}
         showCaptions={showCaptions}
@@ -827,6 +948,10 @@ const MeetingRoom = () => {
         setSelectedLanguage={setSelectedLanguage}
         toggleScreenShare={toggleScreenShare}
         handleEndMeeting={handleEndMeeting}
+  isCreator={isCreator}
+        isRecording={isRecording}
+        onStartRecording={startRecording}
+        onStopRecording={stopRecording}
       />
     </div>
   );

@@ -60,16 +60,18 @@ const meetingSchema = new mongoose.Schema({
       default: false,
     },
   },
-  recording: {
-    public_id: { type: String },
-    url_high: { type: String },
-    url_low: { type: String },
-    duration: { type: Number },
-    bytes: { type: Number },
-    uploadedAt: { type: Date },
-    uploadedBy: { type: mongoose.Schema.ObjectId, ref: 'User' },
-    status: { type: String, enum: ['pending', 'processing', 'ready', 'failed'], default: 'pending' },
-  },
+  recordings: [
+    {
+      public_id: { type: String },
+      url_high: { type: String },
+      url_low: { type: String },
+      duration: { type: Number },
+      bytes: { type: Number },
+      uploadedAt: { type: Date },
+      uploadedBy: { type: mongoose.Schema.ObjectId, ref: 'User' },
+      status: { type: String, enum: ['pending', 'processing', 'ready', 'failed'], default: 'pending' },
+    }
+  ],
   startTime: {
     type: Date,
   },

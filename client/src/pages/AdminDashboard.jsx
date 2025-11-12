@@ -8,6 +8,13 @@ const AdminDashboard = () => {
   const [meetings, setMeetings] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [addUserStatus, setAddUserStatus] = useState({});
+  // recordings modal state
+  const [recordingsModalOpen, setRecordingsModalOpen] = useState(false);
+  const [currentMeetingForRecordings, setCurrentMeetingForRecordings] = useState(null);
+  const [recordingsList, setRecordingsList] = useState([]);
+  const [recordingsLoading, setRecordingsLoading] = useState(false);
+  const [recordingsError, setRecordingsError] = useState(null);
+  const [selectedRecording, setSelectedRecording] = useState(null);
 
   const stats = useMemo(() => {
     const totalUsers = users.length;
@@ -107,6 +114,35 @@ const AdminDashboard = () => {
       }
     };
   }, [isAuthenticated, loading, user]);
+
+  const openRecordings = async (meeting) => {
+    setCurrentMeetingForRecordings(meeting);
+    setRecordingsModalOpen(true);
+    setRecordingsLoading(true);
+    setRecordingsError(null);
+    setRecordingsList([]);
+    setSelectedRecording(null);
+
+    try {
+      const res = await api.get(`/meetings/${meeting.meetingId}/recordings`);
+      const recs = res.data?.recordings || [];
+      setRecordingsList(recs);
+      if (recs.length > 0) setSelectedRecording(recs[0]);
+    } catch (err) {
+      console.error('Failed to fetch recordings', err);
+      setRecordingsError('Failed to load recordings');
+    } finally {
+      setRecordingsLoading(false);
+    }
+  };
+
+  const closeRecordings = () => {
+    setRecordingsModalOpen(false);
+    setCurrentMeetingForRecordings(null);
+    setRecordingsList([]);
+    setSelectedRecording(null);
+    setRecordingsError(null);
+  };
 
   if (loading || dataLoading) {
     return (
@@ -386,6 +422,69 @@ const AdminDashboard = () => {
           </table>
         </div>
       </div>
+        {/* Recordings modal (small) */}
+        {recordingsModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+              <div className="flex items-center justify-between p-4 border-b">
+                <div>
+                  <h3 className="text-lg font-semibold">Recordings</h3>
+                  <p className="text-xs text-neutral-500">{currentMeetingForRecordings?.title || currentMeetingForRecordings?.meetingId}</p>
+                </div>
+                <div>
+                  <button onClick={closeRecordings} className="text-neutral-500 hover:text-neutral-700">✕</button>
+                </div>
+              </div>
+              <div className="p-4 space-y-3">
+                {recordingsLoading ? (
+                  <div className="text-center text-sm text-neutral-500">Loading recordings…</div>
+                ) : recordingsError ? (
+                  <div className="text-center text-sm text-error-600">{recordingsError}</div>
+                ) : recordingsList.length === 0 ? (
+                  <div className="text-center text-sm text-neutral-500">No recordings found for this meeting.</div>
+                ) : (
+                  <div className="flex gap-4">
+                    <div className="w-1/2 overflow-auto max-h-56">
+                      <ul className="space-y-2">
+                        {recordingsList.map((r) => (
+                          <li key={r._id} className={`p-2 rounded-md cursor-pointer border ${selectedRecording && selectedRecording._id === r._id ? 'border-wwc-600 bg-wwc-50' : 'border-neutral-100'}`} onClick={() => setSelectedRecording(r)}>
+                            <div className="text-sm font-medium text-neutral-900">{new Date(r.uploadedAt).toLocaleString()}</div>
+                            <div className="text-xs text-neutral-500">{r.bytes ? `${(r.bytes/1024/1024).toFixed(2)} MB` : '—'} • {r.duration ? `${Math.round(r.duration)}s` : '—'}</div>
+                            <div className="text-xs text-neutral-400">{r.status}</div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="w-1/2">
+                      {selectedRecording ? (
+                        <div>
+                          <video className="w-full h-40 bg-black rounded" controls src={selectedRecording.url_high || selectedRecording.url_low} />
+                          <div className="mt-2 flex justify-between items-center text-xs text-neutral-600">
+                            <div>{selectedRecording.duration ? `${Math.round(selectedRecording.duration)}s` : ''}</div>
+                            <div>{selectedRecording.bytes ? `${(selectedRecording.bytes/1024/1024).toFixed(2)} MB` : ''}</div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-sm text-neutral-500">Select a recording to preview</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="p-3 border-t flex justify-end">
+                <a
+                  className={`inline-flex items-center text-sm font-medium px-3 py-1 rounded ${selectedRecording ? 'bg-wwc-600 text-white hover:bg-wwc-700' : 'bg-neutral-100 text-neutral-600 cursor-not-allowed'}`}
+                  href={selectedRecording ? (selectedRecording.url_high || selectedRecording.url_low) : '#'}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => { if (!selectedRecording) e.preventDefault(); }}
+                >
+                  Open in new tab
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
 
       <div className="bg-white rounded-2xl shadow-medium border border-neutral-100 p-6">
         <h2 className="text-2xl font-bold text-wwc-700 mb-4">
@@ -400,6 +499,7 @@ const AdminDashboard = () => {
                 <th className="py-2 px-4 font-semibold">Host Name</th>
                 <th className="py-2 px-4 font-semibold">Host Email</th>
                 <th className="py-2 px-4 font-semibold">Status</th>
+                    <th className="py-2 px-4 font-semibold">Recorded</th>
                 <th className="py-2 px-4 font-semibold">Participants</th>
                 <th className="py-2 px-4 font-semibold">Created At</th>
               </tr>
@@ -425,13 +525,34 @@ const AdminDashboard = () => {
                       m.status
                     )}
                   </td>
+                      <td className="py-2 px-4">
+                        {/* Show compact Play control; clicking opens modal with recordings list */}
+                        {((m.recordings && m.recordings.length > 0) || (m.recording && m.recording.public_id)) ? (
+                          <button
+                            onClick={() => openRecordings(m)}
+                            className="bg-wwc-600 hover:bg-wwc-700 text-white font-medium py-1 px-3 rounded-md text-sm transition-colors"
+                            title="Open recorded meetings"
+                          >
+                            Play
+                          </button>
+                        ) : m.recording && m.recording.status === 'processing' ? (
+                          <span className="text-sm text-neutral-500">Processing</span>
+                        ) : (
+                          <button
+                            onClick={() => openRecordings(m)}
+                            className="bg-neutral-100 hover:bg-neutral-200 text-neutral-600 font-medium py-1 px-3 rounded-md text-sm border"
+                            title="No recordings yet — open to check"
+                          >
+                            Play
+                          </button>
+                        )}
+                      </td>
                   <td className="py-2 px-4">
                     {m.participants && m.participants.length > 0 ? (
                       <ul className="list-disc ml-4">
                         {m.participants.map((p, idx) => (
                           <li key={idx}>
                             {p.user?.name || p.user} ({p.user?.email || ""}){" "}
-                            {p.isActive ? "(Active)" : "(Left)"}
                           </li>
                         ))}
                       </ul>
