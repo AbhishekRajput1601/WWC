@@ -78,6 +78,9 @@ const meetingSchema = new mongoose.Schema({
   endTime: {
     type: Date,
   },
+  captionsTextPath: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

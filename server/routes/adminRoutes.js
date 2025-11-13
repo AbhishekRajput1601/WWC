@@ -3,6 +3,7 @@ import {
   getAllUser, 
   getAllUsersMeetings,
   getAllUserInMeetings,
+  getMeetingCaptionsText,
 } from '../controllers/adminController.js';
 
 import { updateUserDetails} from '../controllers/authController.js';
@@ -16,6 +17,7 @@ router.put('/users/details', protect, updateUserDetails);
 
 router.get('/users-meetings', protect, getAllUsersMeetings);
 router.get('/meetings-users', protect, getAllUserInMeetings);
+router.get('/meetings/:meetingId/captions', protect, getMeetingCaptionsText);
 
 
 export default router;

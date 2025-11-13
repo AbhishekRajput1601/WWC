@@ -15,6 +15,9 @@ const AdminDashboard = () => {
   const [recordingsLoading, setRecordingsLoading] = useState(false);
   const [recordingsError, setRecordingsError] = useState(null);
   const [selectedRecording, setSelectedRecording] = useState(null);
+  // captions modal state
+  const [captionsModalOpen, setCaptionsModalOpen] = useState(false);
+  const [captionsModalContent, setCaptionsModalContent] = useState('');
 
   const stats = useMemo(() => {
     const totalUsers = users.length;
@@ -486,6 +489,28 @@ const AdminDashboard = () => {
           </div>
         )}
 
+        {captionsModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b">
+                <div>
+                  <h3 className="text-lg font-semibold">Captions</h3>
+                </div>
+                <div>
+                  <button onClick={() => setCaptionsModalOpen(false)} className="text-neutral-500 hover:text-neutral-700">✕</button>
+                </div>
+              </div>
+              <div className="p-4 overflow-auto" style={{ maxHeight: '64vh' }}>
+                <pre className="whitespace-pre-wrap text-sm text-neutral-800">{captionsModalContent}</pre>
+              </div>
+              <div className="p-3 border-t flex justify-end">
+                <button onClick={() => { navigator.clipboard?.writeText(captionsModalContent || '') }} className="mr-2 text-sm px-3 py-1 rounded bg-neutral-100">Copy</button>
+                <a href={'data:text/plain;charset=utf-8,' + encodeURIComponent(captionsModalContent || '')} download={`captions-${Date.now()}.txt`} className="text-sm px-3 py-1 rounded bg-wwc-600 text-white">Download</a>
+              </div>
+            </div>
+          </div>
+        )}
+
       <div className="bg-white rounded-2xl shadow-medium border border-neutral-100 p-6">
         <h2 className="text-2xl font-bold text-wwc-700 mb-4">
           All Meetings & Participants
@@ -500,6 +525,7 @@ const AdminDashboard = () => {
                 <th className="py-2 px-4 font-semibold">Host Email</th>
                 <th className="py-2 px-4 font-semibold">Status</th>
                     <th className="py-2 px-4 font-semibold">Recorded</th>
+                    <th className="py-2 px-4 font-semibold">ViewText</th>
                 <th className="py-2 px-4 font-semibold">Participants</th>
                 <th className="py-2 px-4 font-semibold">Created At</th>
               </tr>
@@ -544,6 +570,30 @@ const AdminDashboard = () => {
                           >
                             Play
                           </button>
+                        )}
+                      </td>
+                      <td className="py-2 px-4">
+                        {m.captionsTextPath ? (
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const res = await api.get(`/admin/meetings/${m.meetingId}/captions`, { responseType: 'text' });
+                                  const text = typeof res.data === 'string' ? res.data : String(res.data || '');
+                                  setCaptionsModalContent(text || '');
+                                  setCaptionsModalOpen(true);
+                                } catch (err) {
+                                  console.error('Failed to fetch captions', err);
+                                  const serverMsg = err?.response?.data?.message || err?.response?.data || err.message || 'Failed to load captions';
+                                  setCaptionsModalContent(String(serverMsg));
+                                  setCaptionsModalOpen(true);
+                                }
+                              }}
+                              className="bg-wwc-600 hover:bg-wwc-700 text-white font-medium py-1 px-3 rounded-md text-sm transition-colors"
+                            >
+                              View
+                            </button>
+                        ) : (
+                          <span className="text-sm text-neutral-400">—</span>
                         )}
                       </td>
                   <td className="py-2 px-4">

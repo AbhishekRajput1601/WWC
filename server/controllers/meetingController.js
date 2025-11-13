@@ -6,6 +6,11 @@ import { Readable } from 'stream';
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import Caption from '../models/Caption.js';
 
 
 export const createMeeting = async (req, res) => {
@@ -176,6 +181,34 @@ export const endMeeting = async (req, res) => {
     });
 
     await meeting.save();
+
+    try {
+      const captionsDoc = await Caption.findOne({ meetingId });
+      if (captionsDoc && captionsDoc.captions && captionsDoc.captions.length) {
+        const outDir = path.join(__dirname, '..', 'captions');
+        try {
+          await fs.mkdir(outDir, { recursive: true });
+        } catch (e) {
+          console.error('Failed to create captions directory:', e);
+        }
+
+        const ts = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `meeting-${meetingId}-${ts}.txt`;
+        const outPath = path.join(outDir, filename);
+
+        const items = captionsDoc.captions.slice().sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        const lines = items
+          .map(c => (c.originalText || '').toString().trim())
+          .filter(t => t.length > 0);
+        const content = lines.join('\n') + (lines.length ? '\n' : '');
+
+        await fs.writeFile(outPath, content, { encoding: 'utf8' });
+        meeting.captionsTextPath = outPath; 
+        await meeting.save();
+      }
+    } catch (err) {
+      logger.error('Failed to export captions on meeting end:', err);
+    }
 
     logger.info(`Meeting ended: ${meetingId} by ${req.user.email}`);
 

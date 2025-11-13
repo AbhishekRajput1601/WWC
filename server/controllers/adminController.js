@@ -1,6 +1,8 @@
 import User from '../models/User.js';
 import Meeting from '../models/Meeting.js';
 import logger from '../utils/logger.js';
+import fs from 'fs/promises';
+import path from 'path';
 
 
 export const updatePreferences = async (req, res) => {
@@ -89,6 +91,35 @@ export const getAllUserInMeetings = async (req, res) => {
       success: false,
       message: 'Server error fetching meetings with users',
     });
+  }
+};
+
+export const getMeetingCaptionsText = async (req, res) => {
+  try {
+    // ensure admin (role-based)
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Admins only' });
+    }
+
+    const { meetingId } = req.params;
+    const meeting = await Meeting.findOne({ meetingId });
+    if (!meeting) return res.status(404).json({ success: false, message: 'Meeting not found' });
+
+    if (!meeting.captionsTextPath) {
+      return res.status(404).json({ success: false, message: 'No captions file available for this meeting' });
+    }
+    try {
+      const filePath = meeting.captionsTextPath;
+      const content = await fs.readFile(filePath, { encoding: 'utf8' });
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.send(content);
+    } catch (err) {
+      logger.error('Error reading captions file:', err);
+      return res.status(500).json({ success: false, message: 'Error reading captions file' });
+    }
+  } catch (error) {
+    logger.error('getMeetingCaptionsText error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
