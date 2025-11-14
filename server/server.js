@@ -1,5 +1,4 @@
 import express from 'express';
-import fileUpload from 'express-fileupload';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
@@ -33,13 +32,6 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-app.use(fileUpload({
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
-  abortOnLimit: true,
-  createParentPath: false,
-  useTempFiles: false,
-}));
 
 
 app.use('/api/auth', authRoutes);

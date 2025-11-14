@@ -193,9 +193,8 @@ class MeetingService {
       const formData = new FormData();
       formData.append('file', fileBlob, `recording-${meetingId}.webm`);
 
-      const response = await api.post(`/meetings/${meetingId}/recordings`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      // Let the browser/axios set the correct multipart Content-Type (with boundary)
+      const response = await api.post(`/meetings/${meetingId}/recordings`, formData);
 
       return { success: true, data: response.data };
     } catch (error) {

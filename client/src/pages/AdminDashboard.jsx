@@ -8,14 +8,50 @@ const AdminDashboard = () => {
   const [meetings, setMeetings] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [addUserStatus, setAddUserStatus] = useState({});
-  // recordings modal state
+
   const [recordingsModalOpen, setRecordingsModalOpen] = useState(false);
   const [currentMeetingForRecordings, setCurrentMeetingForRecordings] = useState(null);
   const [recordingsList, setRecordingsList] = useState([]);
   const [recordingsLoading, setRecordingsLoading] = useState(false);
   const [recordingsError, setRecordingsError] = useState(null);
   const [selectedRecording, setSelectedRecording] = useState(null);
-  // captions modal state
+
+  const [activityRange, setActivityRange] = useState(7);
+
+  const [downloadFormat, setDownloadFormat] = useState('csv');
+
+  const downloadUsers = (format) => {
+    const fmt = format || downloadFormat;
+    if (!users || users.length === 0) return;
+
+    if (fmt === 'csv') {
+      const header = ['User ID', 'Name', 'Email', 'Role', 'Created At'];
+      const rows = users.map((u, idx) => [idx + 1, u.name || '', u.email || '', u.role || '', new Date(u.createdAt).toLocaleString()]);
+      const escape = (s) => `"${String(s).replace(/"/g, '""')}"`;
+      const csv = [header, ...rows].map(r => r.map(escape).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `users-${Date.now()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } else {
+      const lines = users.map((u, idx) => `${idx + 1}. ${u.name || ''} <${u.email || ''}> | ${u.role || ''} | ${new Date(u.createdAt).toLocaleString()}`);
+      const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `users-${Date.now()}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+  };
+
   const [captionsModalOpen, setCaptionsModalOpen] = useState(false);
   const [captionsModalContent, setCaptionsModalContent] = useState('');
 
@@ -34,9 +70,10 @@ const AdminDashboard = () => {
     const activeParticipants = meetings.reduce((sum, m) => 
       sum + (m.participants?.filter(p => p.isActive).length || 0), 0);
 
-    const last7Days = [];
+    const lastDays = [];
     const today = new Date();
-    for (let i = 6; i >= 0; i--) {
+    const range = typeof activityRange === 'number' && activityRange > 0 ? activityRange : 7;
+    for (let i = range - 1; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       date.setHours(0, 0, 0, 0);
@@ -48,7 +85,7 @@ const AdminDashboard = () => {
         return meetingDate >= date && meetingDate < nextDay;
       }).length;
       
-      last7Days.push({
+      lastDays.push({
         date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         count
       });
@@ -64,9 +101,9 @@ const AdminDashboard = () => {
       endedMeetings,
       totalParticipants,
       activeParticipants,
-      last7Days
+      activityDays: lastDays
     };
-  }, [users, meetings]); 
+  }, [users, meetings, activityRange]); 
 
   useEffect(() => {
     if (!isAuthenticated || loading) return;
@@ -368,14 +405,30 @@ const AdminDashboard = () => {
 
  
       <div className="bg-white rounded-2xl shadow-medium border border-neutral-100 p-6 mb-8">
-        <h2 className="text-xl font-bold text-neutral-900 mb-6">Meeting Activity (Last 7 Days)</h2>
-        <div className="h-64 flex items-end justify-between px-4">
-          {stats.last7Days.map((day, index) => {
-            const maxCount = Math.max(...stats.last7Days.map(d => d.count), 1);
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-neutral-900">Meeting Activity</h2>
+          <div className="flex items-center space-x-2">
+            <label className="text-sm text-neutral-600">Range:</label>
+            <select
+              value={activityRange}
+              onChange={(e) => setActivityRange(Number(e.target.value))}
+              className="border rounded px-2 py-1 text-sm bg-white"
+            >
+              <option value={7}>Last 7 days</option>
+              <option value={30}>1 month</option>
+              <option value={90}>3 months</option>
+              <option value={180}>6 months</option>
+              <option value={365}>1 year</option>
+            </select>
+          </div>
+        </div>
+        <div className="h-64 flex items-end justify-between px-4 overflow-x-auto">
+          {stats.activityDays.map((day, index) => {
+            const maxCount = Math.max(...stats.activityDays.map(d => d.count), 1);
             const heightPercent = (day.count / maxCount) * 100;
             
             return (
-              <div key={index} className="flex flex-col items-center flex-1 mx-1">
+              <div key={index} className="flex flex-col items-center flex-1 mx-1 min-w-[48px]">
                 <div className="w-full flex flex-col items-center justify-end" style={{ height: '200px' }}>
                   {day.count > 0 && (
                     <span className="text-xs font-semibold text-wwc-700 mb-1">{day.count}</span>
@@ -397,7 +450,25 @@ const AdminDashboard = () => {
       </div>
 
       <div className="bg-white rounded-2xl shadow-medium border border-neutral-100 p-6 mb-8">
-        <h2 className="text-2xl font-bold text-wwc-700 mb-4">All Users</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold text-wwc-700">All Users</h2>
+          <div className="flex items-center space-x-2">
+            <select
+              value={downloadFormat}
+              onChange={(e) => setDownloadFormat(e.target.value)}
+              className="border rounded px-2 py-1 text-sm bg-white"
+            >
+              <option value="csv">Excel (.csv)</option>
+              <option value="txt">Text (.txt)</option>
+            </select>
+            <button
+              onClick={() => downloadUsers()}
+              className="px-3 py-1 rounded bg-wwc-600 text-white text-sm hover:bg-wwc-700"
+            >
+              Download
+            </button>
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-left">
             <thead>
@@ -428,7 +499,7 @@ const AdminDashboard = () => {
         {/* Recordings modal (small) */}
         {recordingsModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
               <div className="flex items-center justify-between p-4 border-b">
                 <div>
                   <h3 className="text-lg font-semibold">Recordings</h3>

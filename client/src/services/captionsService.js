@@ -31,9 +31,9 @@ const captionsService = {
     formData.append('audio', audioBlob, 'audio.wav');
     formData.append('language', language);
     formData.append('translate', translate ? 'true' : 'false');
+    // Do not manually set Content-Type; the browser will set the correct multipart boundary
     const res = await axios.post(`${API_URL}/whisper/transcribe`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     });

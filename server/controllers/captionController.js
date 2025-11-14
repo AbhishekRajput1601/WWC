@@ -2,18 +2,23 @@ import Caption from '../models/Caption.js';
 import logger from '../utils/logger.js';
 import { transcribeAudio } from '../services/captionsWhisperService.js';
 import fs from 'fs';
+import path from 'path';
 
 export const transcribeAudioHandler = async (req, res) => {
   try {
-    if (!req.files || !req.files.audio) {
+    // multer provides the uploaded file as `req.file` when using upload.single('audio')
+    if (!req.file) {
       return res.status(400).json({ success: false, message: 'No audio file uploaded.' });
     }
-  const audioFile = req.files.audio;
-  const tempDir = 'audioFile';
-  const tempPath = `${tempDir}/temp_${Date.now()}_${audioFile.name}`;
-  await audioFile.mv(tempPath);
 
-    const language = req.body.language || null;
+    const audioFile = req.file; // { buffer, originalname, mimetype }
+    const tempDir = path.join(process.cwd(), 'audioFile');
+    try { await fs.promises.mkdir(tempDir, { recursive: true }); } catch (e) {}
+    const safeName = (audioFile.originalname || 'audio').replace(/[^a-zA-Z0-9.\-_]/g, '_');
+    const tempPath = path.join(tempDir, `temp_${Date.now()}_${safeName}`);
+    await fs.promises.writeFile(tempPath, audioFile.buffer);
+
+    const language = (req.body && req.body.language) ? req.body.language : null;
   // Always transcribe, never use Whisper's translate
   const translate = false;
     // Try to get meetingId from body, query, or headers (FormData can be tricky)
@@ -29,7 +34,7 @@ export const transcribeAudioHandler = async (req, res) => {
     }
     const speaker = req.user?._id;
   const result = await transcribeAudio(tempPath, language, translate);
-    fs.unlinkSync(tempPath);
+    try { await fs.promises.unlink(tempPath); } catch (e) {}
 
     // LibreTranslate integration
     let translatedCaptions = [];
