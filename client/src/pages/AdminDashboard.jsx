@@ -595,8 +595,6 @@ const AdminDashboard = () => {
                 <th className="py-2 px-4 font-semibold">Host Name</th>
                 <th className="py-2 px-4 font-semibold">Host Email</th>
                 <th className="py-2 px-4 font-semibold">Status</th>
-                    <th className="py-2 px-4 font-semibold">Recorded</th>
-                    <th className="py-2 px-4 font-semibold">ViewText</th>
                 <th className="py-2 px-4 font-semibold">Participants</th>
                 <th className="py-2 px-4 font-semibold">Created At</th>
               </tr>
@@ -609,64 +607,17 @@ const AdminDashboard = () => {
                   <td className="py-2 px-4">{m.host?.name || m.host}</td>
                   <td className="py-2 px-4">{m.host?.email || ""}</td>
                   <td className="py-2 px-4">
-                    {m.status === 'ended' ? (
+                    {m.status === 'ended' && (
                       <span className="text-error-700 font-semibold">Ended</span>
-                    ) : m.status === 'scheduled' ? (
-                      <button
-                        onClick={() => window.location.href = `/meeting/${m.meetingId}`}
-                        className="bg-wwc-600 hover:bg-wwc-700 text-white font-medium py-1 px-4 rounded-lg transition-colors"
-                      >
-                        Join
-                      </button>
-                    ) : (
-                      m.status
+                    )}
+                    {m.status === 'scheduled' && (
+                      <span className="text-wwc-700 font-semibold">Scheduled</span>
+                    )}
+                    {m.status === 'active' && (
+                      <span className="text-success-700 font-semibold">Active</span>
                     )}
                   </td>
-                      <td className="py-2 px-4">
-                        {((m.recordings && m.recordings.length > 0) || (m.recording && m.recording.public_id)) ? (
-                          <button
-                            onClick={() => openRecordings(m)}
-                            className="bg-wwc-600 hover:bg-wwc-700 text-white font-medium py-1 px-3 rounded-md text-sm transition-colors"
-                            title="Open recorded meetings"
-                          >
-                            Play
-                          </button>
-                        ) : m.recording && m.recording.status === 'processing' ? (
-                          <span className="text-sm text-neutral-500">Processing</span>
-                        ) : (
-                          <button
-                            onClick={() => openRecordings(m)}
-                            className="bg-neutral-100 hover:bg-neutral-200 text-neutral-600 font-medium py-1 px-3 rounded-md text-sm border"
-                            title="No recordings yet — open to check"
-                          >
-                            Play
-                          </button>
-                        )}
-                      </td>
-                      <td className="py-2 px-4">
-                        {m.captionsTextPath ? (
-                            <button
-                              onClick={async () => {
-                                try {
-                                  const res = await api.get(`/admin/meetings/${m.meetingId}/captions`, { responseType: 'text' });
-                                  const text = typeof res.data === 'string' ? res.data : String(res.data || '');
-                                  setCaptionsModalContent(text || '');
-                                  setCaptionsModalOpen(true);
-                                } catch (err) {
-                                  console.error('Failed to fetch captions', err);
-                                  const serverMsg = err?.response?.data?.message || err?.response?.data || err.message || 'Failed to load captions';
-                                  setCaptionsModalContent(String(serverMsg));
-                                  setCaptionsModalOpen(true);
-                                }
-                              }}
-                              className="bg-wwc-600 hover:bg-wwc-700 text-white font-medium py-1 px-3 rounded-md text-sm transition-colors"
-                            >
-                              View
-                            </button>
-                        ) : (
-                          <span className="text-sm text-neutral-400">—</span>
-                        )}
-                      </td>
+                  
                   <td className="py-2 px-4">
                     {m.participants && m.participants.length > 0 ? (
                       <ul className="list-disc ml-4">

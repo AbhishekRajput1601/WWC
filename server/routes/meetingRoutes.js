@@ -6,6 +6,7 @@ import {
   endMeeting,
   getMeeting,
   getUserMeetings,
+  getMeetingCaptionsText,
   addUserInMeeting,
   deleteMeeting,
   uploadRecording,
@@ -26,6 +27,7 @@ router.route('/')
   .post(createMeeting);
 
 router.get('/:meetingId', getMeeting);
+router.get('/:meetingId/captions', getMeetingCaptionsText);
 // Recording endpoints (creator only enforced in controller)
 // Recording endpoints (creator only enforced in controller)
 router.post('/:meetingId/recordings', upload.single('file'), uploadRecording);

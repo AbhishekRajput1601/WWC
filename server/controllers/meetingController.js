@@ -500,6 +500,38 @@ export const getRecordings = async (req, res) => {
   }
 };
 
+export const getMeetingCaptionsText = async (req, res) => {
+  try {
+    const { meetingId } = req.params;
+    const meeting = await Meeting.findOne({ meetingId });
+    if (!meeting) return res.status(404).json({ success: false, message: 'Meeting not found' });
+
+    // allow if user is host or participant
+    const isHost = meeting.host && meeting.host.toString() === req.user.id;
+    const isParticipant = (meeting.participants || []).some(p => p.user && p.user.toString() === req.user.id);
+    if (!isHost && !isParticipant && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Not authorized to view captions' });
+    }
+
+    if (!meeting.captionsTextPath) {
+      return res.status(404).json({ success: false, message: 'No captions file available for this meeting' });
+    }
+
+    try {
+      const filePath = meeting.captionsTextPath;
+      const content = await fs.readFile(filePath, { encoding: 'utf8' });
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.send(content);
+    } catch (err) {
+      logger.error('Error reading captions file:', err);
+      return res.status(500).json({ success: false, message: 'Error reading captions file' });
+    }
+  } catch (error) {
+    logger.error('getMeetingCaptionsText error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 export const getRecording = async (req, res) => {
   try {
     const { meetingId, recordingId } = req.params;
