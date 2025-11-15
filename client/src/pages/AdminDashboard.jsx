@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import api from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -52,8 +53,71 @@ const AdminDashboard = () => {
     }
   };
 
+  const [downloadMeetingsFormat, setDownloadMeetingsFormat] = useState('csv');
+
+  const downloadMeetings = (format) => {
+    const fmt = format || downloadMeetingsFormat;
+    if (!meetings || meetings.length === 0) return;
+
+    if (fmt === 'csv') {
+      const header = ['Meeting ID', 'Title', 'Host Name', 'Host Email', 'Status', 'Participants', 'Created At'];
+      const rows = meetings.map((m) => {
+        const participants = (m.participants || []).map(p => `${p.user?.name || p.user || ''} <${p.user?.email || ''}>`).join('; ');
+        return [m.meetingId || '', m.title || '', m.host?.name || '', m.host?.email || '', m.status || '', participants, new Date(m.createdAt).toLocaleString()];
+      });
+      const escape = (s) => `"${String(s).replace(/"/g, '""')}"`;
+      const csv = [header, ...rows].map(r => r.map(escape).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `meetings-${Date.now()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } else {
+      const lines = meetings.map((m, idx) => {
+        const participants = (m.participants || []).map(p => `${p.user?.name || p.user || ''} <${p.user?.email || ''}>`).join('; ');
+        return `${idx + 1}. ${m.title || ''} | ${m.meetingId || ''} | Host: ${m.host?.name || ''} <${m.host?.email || ''}> | Status: ${m.status || ''} | Participants: ${participants} | Created: ${new Date(m.createdAt).toLocaleString()}`;
+      });
+      const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `meetings-${Date.now()}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+  };
+
   const [captionsModalOpen, setCaptionsModalOpen] = useState(false);
   const [captionsModalContent, setCaptionsModalContent] = useState('');
+  const [openParticipantsId, setOpenParticipantsId] = useState(null);
+  const [dropdownPos, setDropdownPos] = useState(null);
+  const [dropdownParticipants, setDropdownParticipants] = useState([]);
+
+  const toggleParticipants = (e, id, participants) => {
+    e.stopPropagation();
+    if (openParticipantsId === id) {
+      setOpenParticipantsId(null);
+      setDropdownParticipants([]);
+      setDropdownPos(null);
+      return;
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    // prefer aligning dropdown right edge to button right edge, fallback to left
+    const dropdownWidth = 288; // matches w-72
+    let left = rect.right - dropdownWidth;
+    if (left < 8) left = rect.left;
+
+    setDropdownPos({ top: rect.bottom + window.scrollY + 8, left: left + window.scrollX });
+    setDropdownParticipants(participants || []);
+    setOpenParticipantsId(id);
+  };
 
   const stats = useMemo(() => {
     const totalUsers = users.length;
@@ -583,9 +647,25 @@ const AdminDashboard = () => {
         )}
 
       <div className="bg-white rounded-2xl shadow-medium border border-neutral-100 p-6">
-        <h2 className="text-2xl font-bold text-wwc-700 mb-4">
-          All Meetings & Participants
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold text-wwc-700">All Meetings & Participants</h2>
+          <div className="flex items-center space-x-2">
+            <select
+              value={downloadMeetingsFormat}
+              onChange={(e) => setDownloadMeetingsFormat(e.target.value)}
+              className="border rounded px-2 py-1 text-sm bg-white"
+            >
+              <option value="csv">Excel (.csv)</option>
+              <option value="txt">Text (.txt)</option>
+            </select>
+            <button
+              onClick={() => downloadMeetings()}
+              className="px-3 py-1 rounded bg-wwc-600 text-white text-sm hover:bg-wwc-700"
+            >
+              Download
+            </button>
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-left">
             <thead>
@@ -618,17 +698,42 @@ const AdminDashboard = () => {
                     )}
                   </td>
                   
-                  <td className="py-2 px-4">
-                    {m.participants && m.participants.length > 0 ? (
-                      <ul className="list-disc ml-4">
-                        {m.participants.map((p, idx) => (
-                          <li key={idx}>
-                            {p.user?.name || p.user} ({p.user?.email || ""}){" "}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      "None"
+                  <td className="py-2 px-4 relative">
+                    <div className="inline-block">
+                      <button
+                        onClick={(e) => toggleParticipants(e, m._id, m.participants)}
+                        className="flex items-center space-x-2 px-3 py-1 bg-neutral-100 hover:bg-neutral-200 rounded-md text-sm border"
+                      >
+                        <span>{(m.participants || []).length}</span>
+                        <span className="text-neutral-600">Participants</span>
+                        <svg className="w-4 h-4 text-neutral-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clipRule="evenodd"/></svg>
+                      </button>
+                    </div>
+
+                    {openParticipantsId === m._id && dropdownPos && createPortal(
+                      <div
+                        style={{ position: 'absolute', top: dropdownPos.top + 'px', left: dropdownPos.left + 'px', width: '288px', maxWidth: '90vw' }}
+                        className="bg-white border rounded-lg shadow-lg z-50"
+                      >
+                        <div className="p-2">
+                          <div className="text-sm font-medium text-neutral-800 mb-2">Participants ({(dropdownParticipants || []).length})</div>
+                          <ul className="space-y-2 max-h-48 overflow-auto pr-2">
+                            {(dropdownParticipants || []).length === 0 ? (
+                              <li className="text-sm text-neutral-500">No participants</li>
+                            ) : (
+                              (dropdownParticipants || []).map((p, idx) => (
+                                <li key={idx} className="flex items-center space-x-3 p-2 rounded hover:bg-wwc-50">
+                                  <div className="flex-1">
+                                    <div className="text-sm font-medium text-neutral-900">{p.user?.name || p.user}</div>
+                                    <div className="text-xs text-neutral-500">{p.user?.email || ''}</div>
+                                  </div>
+                                </li>
+                              ))
+                            )}
+                          </ul>
+                        </div>
+                      </div>,
+                      document.body
                     )}
                   </td>
                   <td className="py-2 px-4">

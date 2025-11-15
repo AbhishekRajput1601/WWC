@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import authService from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../utils/api";
@@ -25,6 +26,29 @@ const UserProfile = () => {
   const [captionsModalOpen, setCaptionsModalOpen] = useState(false);
   const [captionsModalContent, setCaptionsModalContent] = useState('');
   const [activityRange, setActivityRange] = useState(7);
+  const [openParticipantsId, setOpenParticipantsId] = useState(null);
+
+  const [dropdownPos, setDropdownPos] = useState(null);
+  const [dropdownParticipants, setDropdownParticipants] = useState([]);
+
+  const toggleParticipants = (e, id, participants) => {
+    e.stopPropagation();
+    if (openParticipantsId === id) {
+      setOpenParticipantsId(null);
+      setDropdownParticipants([]);
+      setDropdownPos(null);
+      return;
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const dropdownWidth = 288; // w-72
+    let left = rect.right - dropdownWidth;
+    if (left < 8) left = rect.left;
+
+    setDropdownPos({ top: rect.bottom + window.scrollY + 8, left: left + window.scrollX });
+    setDropdownParticipants(participants || []);
+    setOpenParticipantsId(id);
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -326,15 +350,42 @@ const UserProfile = () => {
                         <span className="text-sm text-neutral-400">—</span>
                       )}
                     </td>
-                    <td className="py-2 px-4">
-                      {m.participants && m.participants.length > 0 ? (
-                        <ul className="list-disc ml-4">
-                          {m.participants.map((p, idx) => (
-                            <li key={idx}>{p.user?.name || p.user} ({p.user?.email || ''})</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        'None'
+                    <td className="py-2 px-4 relative">
+                      <div className="inline-block">
+                        <button
+                          onClick={(e) => toggleParticipants(e, m._id, m.participants)}
+                          className="flex items-center space-x-2 px-3 py-1 bg-neutral-100 hover:bg-neutral-200 rounded-md text-sm border"
+                        >
+                          <span>{(m.participants || []).length}</span>
+                          <span className="text-neutral-600">Participants</span>
+                          <svg className="w-4 h-4 text-neutral-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clipRule="evenodd"/></svg>
+                        </button>
+                      </div>
+
+                      {openParticipantsId === m._id && dropdownPos && createPortal(
+                        <div
+                          style={{ position: 'absolute', top: dropdownPos.top + 'px', left: dropdownPos.left + 'px', width: '288px', maxWidth: '90vw' }}
+                          className="bg-white border rounded-lg shadow-lg z-50"
+                        >
+                          <div className="p-2">
+                            <div className="text-sm font-medium text-neutral-800 mb-2">Participants ({(dropdownParticipants || []).length})</div>
+                            <ul className="space-y-2 max-h-48 overflow-auto pr-2">
+                              {(dropdownParticipants || []).length === 0 ? (
+                                <li className="text-sm text-neutral-500">No participants</li>
+                              ) : (
+                                (dropdownParticipants || []).map((p, idx) => (
+                                  <li key={idx} className="flex items-center space-x-3 p-2 rounded hover:bg-wwc-50">
+                                    <div className="flex-1">
+                                      <div className="text-sm font-medium text-neutral-900">{p.user?.name || p.user}</div>
+                                      <div className="text-xs text-neutral-500">{p.user?.email || ''}</div>
+                                    </div>
+                                  </li>
+                                ))
+                              )}
+                            </ul>
+                          </div>
+                        </div>,
+                        document.body
                       )}
                     </td>
                     <td className="py-2 px-4">{new Date(m.createdAt).toLocaleString()}</td>
