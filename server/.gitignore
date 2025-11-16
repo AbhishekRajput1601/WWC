@@ -200,4 +200,3 @@ ecosystem.config.js
 # Serverless
 .serverless/
 
-/config/env.js
