@@ -97,7 +97,6 @@ const meetingSchema = new mongoose.Schema({
 });
 
 
-meetingSchema.index({ meetingId: 1 });
 meetingSchema.index({ host: 1 });
 meetingSchema.index({ 'participants.user': 1 });
 meetingSchema.index({ meetingId: 1, 'messages.timestamp': -1 });

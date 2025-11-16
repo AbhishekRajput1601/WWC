@@ -19,17 +19,19 @@ connectDB();
 
 const app = express();
 const httpServer = createServer(app);
+
+const clientOrigin = process.env.CLIENT_URL || "http://localhost:5174";
+const corsOptions = {
+  origin: clientOrigin,
+  methods: ["GET", "POST"],
+  credentials: true,
+};
+
 const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:5174",
-    methods: ["GET", "POST"]
-  }
+  cors: corsOptions,
 });
 
-app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:5174",
-  credentials: true
-}));
+app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -42,7 +44,6 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/whisper', whisperRoutes);
 
 
-// make the io instance available to controllers/services that need to emit
 setIO(io);
 
 setupSignaling(io);

@@ -38,7 +38,6 @@ const meetingCaptionsSchema = new Schema(
   { timestamps: true }
 );
 
-meetingCaptionsSchema.index({ meetingId: 1 });
 
 const Caption = mongoose.model('Caption', meetingCaptionsSchema);
 
