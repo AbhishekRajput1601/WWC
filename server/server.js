@@ -21,17 +21,33 @@ const app = express();
 const httpServer = createServer(app);
 
 const clientOrigin = process.env.CLIENT_URL || "http://localhost:5174";
+const allowedOrigins = [clientOrigin];
+console.log('Allowed client origin:', clientOrigin);
 const corsOptions = {
-  origin: clientOrigin,
-  methods: ["GET", "POST"],
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS policy: Origin not allowed'), false);
+  },
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-Requested-With"],
   credentials: true,
+  optionsSuccessStatus: 204,
 };
 
 const io = new Server(httpServer, {
-  cors: corsOptions,
+  cors: {
+    origin: clientOrigin,
+    methods: corsOptions.methods,
+    credentials: corsOptions.credentials,
+  },
 });
 
 app.use(cors(corsOptions));
+
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
