@@ -11,6 +11,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import whisperRoutes from './routes/whisperRoutes.js';
 import { setupSignaling } from './sockets/signaling.js';
 import { setupCaptions } from './sockets/captions.js';
+import { setIO } from './utils/socket.js';
 
 dotenv.config();
 
@@ -40,6 +41,9 @@ app.use('/api/captions', captionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/whisper', whisperRoutes);
 
+
+// make the io instance available to controllers/services that need to emit
+setIO(io);
 
 setupSignaling(io);
 setupCaptions(io);

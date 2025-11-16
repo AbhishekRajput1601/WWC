@@ -435,9 +435,34 @@ const MeetingRoom = () => {
       setRemoteScreenSharerId((prev) => (prev === socketId ? null : prev));
     socket.on("user-started-screen-share", onStart);
     socket.on("user-stopped-screen-share", onStop);
+
+    // handle meeting ended by host
+    const onMeetingEnded = ({ meetingId: mid, reason }) => {
+      console.log('Meeting ended event received', mid, reason);
+      setMeetingEnded(true);
+
+      try {
+        if (mediaStream) {
+          mediaStream.getTracks().forEach((t) => t.stop());
+        }
+      } catch (e) {}
+
+      try {
+        Object.values(peerConnections.current).forEach((pc) => pc.close());
+        peerConnections.current = {};
+      } catch (e) {}
+
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1500);
+    };
+
+    socket.on('meeting-ended', onMeetingEnded);
+
     return () => {
       socket.off("user-started-screen-share", onStart);
       socket.off("user-stopped-screen-share", onStop);
+      socket.off('meeting-ended', onMeetingEnded);
     };
   }, [socket]);
 

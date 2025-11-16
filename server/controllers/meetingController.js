@@ -11,6 +11,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import Caption from '../models/Caption.js';
+import { getIO } from '../utils/socket.js';
 
 
 export const createMeeting = async (req, res) => {
@@ -196,11 +197,26 @@ export const endMeeting = async (req, res) => {
         const filename = `meeting-${meetingId}-${ts}.txt`;
         const outPath = path.join(outDir, filename);
 
-        const items = captionsDoc.captions.slice().sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-        const lines = items
-          .map(c => (c.originalText || '').toString().trim())
-          .filter(t => t.length > 0);
-        const content = lines.join('\n') + (lines.length ? '\n' : '');
+          try {
+            await captionsDoc.populate('captions.speaker', 'name');
+          } catch (e) {
+            console.error('Failed to populate caption speakers:', e);
+          }
+
+          const items = captionsDoc.captions.slice().sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+          const lines = items
+            .map(c => {
+              const text = (c.originalText || '').toString().trim();
+              if (!text) return null;
+              let speakerName = 'Unknown';
+              if (c.speaker) {
+                // speaker may be populated (object) or just an id
+                speakerName = typeof c.speaker === 'object' && c.speaker.name ? c.speaker.name : String(c.speaker);
+              }
+              return `${speakerName}: ${text}`;
+            })
+            .filter(t => t && t.length > 0);
+          const content = lines.join('\n') + (lines.length ? '\n' : '');
 
         await fs.writeFile(outPath, content, { encoding: 'utf8' });
         meeting.captionsTextPath = outPath; 
@@ -211,6 +227,19 @@ export const endMeeting = async (req, res) => {
     }
 
     logger.info(`Meeting ended: ${meetingId} by ${req.user.email}`);
+
+    // Notify connected clients in the meeting room that the meeting ended
+    try {
+      const io = getIO();
+      if (io) {
+        io.to(meetingId).emit('meeting-ended', {
+          meetingId,
+          reason: 'host-ended',
+        });
+      }
+    } catch (e) {
+      logger.error('Failed to emit meeting-ended socket event:', e);
+    }
 
     res.json({
       success: true,
