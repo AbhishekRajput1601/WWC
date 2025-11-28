@@ -121,19 +121,19 @@ export const leaveMeeting = async (req, res) => {
       });
     }
 
-    meeting.participants = meeting.participants.filter(
-      p => p.user.toString() !== req.user.id
-    );
-    await meeting.save();
-
-    const participant = meeting.participants.find(
-      p => p.user.toString() === req.user.id && p.isActive
+    // Find participant entry and mark as not active / set leftAt
+    let participant = (meeting.participants || []).find(
+      (p) => p.user && p.user.toString() === req.user.id
     );
 
     if (participant) {
       participant.isActive = false;
       participant.leftAt = new Date();
+      // save the meeting with updated participant
       await meeting.save();
+    } else {
+      // if participant record doesn't exist, just return not found
+      return res.status(404).json({ success: false, message: 'You are not part of this meeting' });
     }
 
     logger.info(`User ${req.user.email} left meeting: ${meetingId}`);
@@ -349,17 +349,47 @@ export const addUserInMeeting = async (req, res) => {
 export const deleteMeeting = async (req, res) => {
   try {
     const { meetingId } = req.params;
-    const meeting = await Meeting.findOneAndDelete({ meetingId });
+    const meeting = await Meeting.findOne({ meetingId });
     if (!meeting) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Meeting not found' 
+      return res.status(404).json({
+        success: false,
+        message: 'Meeting not found',
       });
-    }   
-    res.status(200).json({
-      success: true,
-      message: 'Meeting deleted successfully',
-    });
+    }
+
+    // If the requester is the host, delete the meeting entirely
+    if (meeting.host && meeting.host.toString() === req.user.id) {
+      await Meeting.findOneAndDelete({ meetingId });
+      // notify connected clients in the meeting that it was deleted
+      try {
+        const io = getIO();
+        if (io) {
+          io.to(meetingId).emit('meeting-deleted', { meetingId });
+        }
+      } catch (e) {
+        logger.warn('Failed to emit meeting-deleted socket event:', e);
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Meeting deleted successfully',
+      });
+    }
+
+    // If requester is not the host, remove them from the participants list
+    const initialCount = meeting.participants ? meeting.participants.length : 0;
+    meeting.participants = (meeting.participants || []).filter(
+      (p) => !(p.user && p.user.toString() === req.user.id)
+    );
+
+    if ((meeting.participants ? meeting.participants.length : 0) === initialCount) {
+      // user wasn't a participant
+      return res.status(404).json({ success: false, message: 'You are not a participant of this meeting' });
+    }
+
+    await meeting.save();
+
+    return res.status(200).json({ success: true, message: 'Removed from your meetings' });
   }
   catch (error) {
     logger.error('Delete meeting error:', error);

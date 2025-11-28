@@ -1,4 +1,5 @@
 import React from "react";
+import meetingService from "../../services/meetingService";
 
 const Controlbar = ({
   isMuted,
@@ -18,10 +19,75 @@ const Controlbar = ({
   isRecording,
   onStartRecording,
   onStopRecording,
+  // new props for panels and navigation
+  activePanel,
+  setActivePanel,
+  mediaStream,
+  socket,
+  navigate,
+  user,
+  meetingId,
 }) => {
+  const handleLeave = async () => {
+    try {
+      if (meetingId) {
+        await meetingService.leaveMeeting(meetingId);
+      }
+    } catch (err) {
+      console.warn('Error calling leave endpoint:', err);
+    }
+    try {
+      if (mediaStream) mediaStream.getTracks().forEach((t) => t.stop());
+    } catch (e) {}
+    try {
+      if (socket) {
+        try {
+          socket.emit('leave-meeting');
+        } catch (e) {}
+        try {
+          socket.disconnect();
+        } catch (e) {}
+      }
+    } catch (e) {}
+    if (navigate) navigate('/dashboard');
+  };
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-neutral-200 px-6 py-4 shadow-hard">
       <div className="flex items-center justify-center space-x-4">
+        {/* Participants, Chat, Leave - moved from header */}
+        <div className="flex items-center space-x-2 mr-4">
+          <button
+            onClick={() => setActivePanel(activePanel === "users" ? null : "users")}
+            className={`px-3 py-2 rounded-lg font-medium transition-all duration-200 border-2 border-black text-sm flex items-center space-x-2 ${
+              activePanel === "users"
+                ? "bg-gray-200 text-black shadow-soft"
+                : "bg-white text-black hover:bg-gray-200"
+            }`}
+            title="Participants"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.196-2.121M9 6a3 3 0 106 0 3 3 0 00-6 0zM7 20a3 3 0 015.196-2.121M15 6a3 3 0 106 0 3 3 0 00-6 0z" />
+            </svg>
+            <span>Participants</span>
+          </button>
+
+          <button
+            onClick={() => setActivePanel(activePanel === "chat" ? null : "chat")}
+            className={`px-3 py-2 rounded-lg font-medium transition-all duration-200 border-2 border-black text-sm flex items-center space-x-2 ${
+              activePanel === "chat"
+                ? "bg-gray-200 text-black shadow-soft"
+                : "bg-white text-black hover:bg-gray-200"
+            }`}
+            title="Chat"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <span>Chat</span>
+          </button>
+
+          
+        </div>
         {/* Microphone Toggle */}
         <button
           type="button"
@@ -48,14 +114,14 @@ const Controlbar = ({
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                d="M5.636 5.636l12.728 12.728M5.636 18.364L18.364 5.636"
               />
             ) : (
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M5.636 5.636l12.728 12.728M5.636 18.364L18.364 5.636"
+                d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
               />
             )}
           </svg>
@@ -134,7 +200,7 @@ const Controlbar = ({
 
         {/* Language Selector */}
         <div className="flex items-center space-x-1">
-          <label className="text-xs font-medium text-neutral-700">
+          <label className="text-md font-medium text-black">
             Language:
           </label>
           <select
@@ -143,7 +209,7 @@ const Controlbar = ({
               e.stopPropagation();
               setSelectedLanguage(e.target.value);
             }}
-            className="bg-white border border-neutral-200 text-neutral-900 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-wwc-500 focus:border-wwc-500 transition-all duration-200 text-xs"
+            className="px-1 py-1 rounded-xl border-2 border-black bg-white text-black focus:outline-nontransition-all duration-200 text-md "
           >
             <option value="en">English</option>
             <option value="es">Spanish</option>
@@ -151,6 +217,16 @@ const Controlbar = ({
             <option value="de">German</option>
             <option value="zh">Chinese</option>
             <option value="ja">Japanese</option>
+            <option value="ru">Russian</option>
+            <option value="hi">Hindi</option>
+            <option value="ta">Tamil</option>
+            <option value="bn">Bengali</option>
+            <option value="te">Telugu</option>
+            <option value="ml">Malayalam</option>
+            <option value="kn">Kannada</option>
+            <option value="pa">Punjabi</option>
+            <option value="gu">Gujrati</option>
+            <option value="mr">Marathi</option>
           </select>
         </div>
 
@@ -195,26 +271,56 @@ const Controlbar = ({
           title={isRecording ? 'Stop recording' : 'Record meeting'}
         >
           <div className="flex items-center space-x-2">
-            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
               <circle cx="12" cy="12" r="6" />
             </svg>
             <span className="text-xs">{isRecording ? 'Stop' : 'Record'}</span>
           </div>
         </button>
-        {/* End Meeting Button */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            handleEndMeeting();
-          }}
-          disabled={endingMeeting}
-          className="px-5 py-2 rounded-xl font-bold bg-error-600 text-white shadow-soft border-2 border-error-700 hover:bg-error-700 transition-all duration-200"
-          title="End Meeting"
-        >
-          {endingMeeting ? "Ending..." : "End Meeting"}
-        </button>
+        {/* End Meeting (host) or Leave (others) */}
+        {isCreator ? (
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleEndMeeting();
+              }}
+              disabled={endingMeeting}
+              className="px-5 py-2 rounded-xl font-bold bg-error-600 text-white shadow-soft border-2 border-error-700 hover:bg-error-700 transition-all duration-200"
+              title="End Meeting"
+            >
+              {endingMeeting ? 'Ending...' : 'End Meeting'}
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleLeave();
+              }}
+              className="px-2 py-2 rounded-xl font-bold bg-white text-black shadow-soft border-2 border-black hover:bg-gray-200 transition-all duration-200"
+              title="Leave Meeting"
+            >
+              Leave
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleLeave();
+            }}
+            className="px-3 py-2 rounded-xl font-bold bg-white text-black shadow-soft border-2 border-black hover:bg-gray-200 transition-all duration-200"
+            title="Leave Meeting"
+          >
+            Leave
+          </button>
+        )}
         {endMeetingError && (
           <span className="text-error-600 ml-4 font-semibold">
             {endMeetingError}

@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import api from "../utils/api";
 import MeetingStage from "./MeetingStage.jsx";
 import MeetingSidePanel from "./MeetingSidePanel.jsx";
 import MeetingControls from "./MeetingControls.jsx";
-import Meetingheaderbar from "../components/Layout/Meetingheaderbar.jsx";
 import io from "socket.io-client";
 import meetingService from "../services/meetingService";
 import { useParams, useNavigate } from "react-router-dom";
@@ -86,12 +85,17 @@ const MeetingRoom = () => {
   };
 
   const toggleMute = () => {
+    const newMuted = !isMuted;
     if (mediaStream) {
-      mediaStream.getAudioTracks().forEach((track) => {
-        track.enabled = !isMuted;
-      });
+      try {
+        mediaStream.getAudioTracks().forEach((track) => {
+          track.enabled = !newMuted;
+        });
+      } catch (e) {
+        console.warn('Failed to toggle audio tracks', e);
+      }
     }
-    setIsMuted((prev) => !prev);
+    setIsMuted(newMuted);
   };
   const toggleVideo = () => {
     if (mediaStream) {
@@ -160,13 +164,7 @@ const MeetingRoom = () => {
         );
         formData.append("meetingId", meetingId);
         try {
-          const token = localStorage.getItem("token");
-          // Do not set Content-Type here; allow browser to include the multipart boundary
-          const res = await axios.post("/api/whisper/transcribe", formData, {
-            headers: {
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-          });
+          const res = await api.post(`/whisper/transcribe`, formData);
           if (res.data && res.data.captions && res.data.captions.length > 0) {
             setCurrentCaption(
               res.data.captions[res.data.captions.length - 1].text
@@ -311,6 +309,16 @@ const MeetingRoom = () => {
           userId: user?._id,
           userName: user?.name || "User",
         });
+        (async () => {
+          try {
+            const res = await meetingService.joinMeeting(meetingId);
+            if (res && res.success && res.meeting) {
+              setMeeting(res.meeting);
+            }
+          } catch (e) {
+            console.warn('Could not persist join to meeting service', e);
+          }
+        })();
 
         sock.on("ice-servers", (config) => {
           iceServers.current = config;
@@ -488,6 +496,17 @@ const MeetingRoom = () => {
       else hostId = String(meeting.host);
     }
     return hostId && String(hostId) === userId;
+  })();
+
+  // compute hostId for child components (string or null)
+  const hostId = (() => {
+    if (!meeting) return null;
+    if (meeting.host) {
+      if (typeof meeting.host === 'string') return meeting.host;
+      if (meeting.host._id) return String(meeting.host._id);
+      return String(meeting.host);
+    }
+    return null;
   })();
 
   const startRecording = () => {
@@ -702,26 +721,15 @@ const MeetingRoom = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-wwc-50 via-white to-accent-50 overflow-hidden relative">
-      {/* Meeting Header - Fixed Top Bar */}
-      <Meetingheaderbar
-        meetingId={meetingId}
-        activePanel={activePanel}
-        setActivePanel={setActivePanel}
-        mediaStream={mediaStream}
-        socket={socket}
-        navigate={navigate}
-        isMuted={isMuted}
-        user={user}
-      />
-
-      <div className="flex-1 flex mt-20">
-        <div className="flex w-full h-[calc(100vh-96px-72px)]">
+      <div className="flex-1 flex mt-6">
+        <div className="flex w-full h-[calc(100vh-72px)]">
           <MeetingStage
             mediaStream={mediaStream}
             participants={participants}
             remoteStreams={remoteStreams}
             selfSocketId={selfSocketId}
             socket={socket}
+            hostId={hostId}
             isScreenSharing={isScreenSharing}
             remoteScreenSharerId={remoteScreenSharerId}
             screenStreamRef={screenStreamRef}
@@ -760,6 +768,13 @@ const MeetingRoom = () => {
         isRecording={isRecording}
         onStartRecording={startRecording}
         onStopRecording={stopRecording}
+        activePanel={activePanel}
+        setActivePanel={setActivePanel}
+        mediaStream={mediaStream}
+        socket={socket}
+        navigate={navigate}
+        user={user}
+        meetingId={meetingId}
       />
     </div>
   );

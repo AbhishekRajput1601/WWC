@@ -51,10 +51,20 @@ const Dashboard = () => {
     if (joinMeetingId.trim()) {
       (async () => {
         try {
-          await api.post("/meetings/add-user-in-meeting", {
+          const res = await api.post("/meetings/add-user-in-meeting", {
             meetingId: joinMeetingId.trim(),
             userId: user.id,
           });
+          // If server returned meeting data, add it to recent meetings list
+          if (res && res.data && res.data.data) {
+            const joinedMeeting = res.data.data;
+            // avoid duplicates
+            setMeetings((prev) => {
+              const exists = prev.some((m) => m.meetingId === joinedMeeting.meetingId);
+              if (exists) return prev;
+              return [joinedMeeting, ...prev];
+            });
+          }
         } catch (err) {
           console.error("Error joining meeting:", err);
         } finally {
@@ -65,16 +75,23 @@ const Dashboard = () => {
   };
 
   const handleDeleteMeeting = async (meetingId) => {
-    if (window.confirm("Are you sure you want to delete this meeting?")) {
-      try {
-        await api.delete(`/meetings/delete-meeting/${meetingId}`);
-        setMeetings(
-          meetings.filter((meeting) => meeting.meetingId !== meetingId)
-        );
-      } catch (error) {
-        console.error("Error deleting meeting:", error);
-        alert("Failed to delete meeting. Please try again.");
-      }
+    const meetingObj = meetings.find((m) => m.meetingId === meetingId);
+    const hostId = meetingObj && meetingObj.host && (meetingObj.host._id ? String(meetingObj.host._id) : String(meetingObj.host));
+    const isHost = hostId && String(hostId) === String(user?.id || user?._id);
+
+    const confirmMessage = isHost
+      ? 'Are you sure you want to DELETE this meeting for everyone? This action cannot be undone.'
+      : 'Remove this meeting from your recent meetings? This will not affect other users.';
+
+    if (!window.confirm(confirmMessage)) return;
+
+    try {
+      const res = await api.delete(`/meetings/delete-meeting/${meetingId}`);
+      // Remove from local list regardless of server-side action (host will have removed it globally, non-host removed their participant)
+      setMeetings((prev) => prev.filter((meeting) => meeting.meetingId !== meetingId));
+    } catch (error) {
+      console.error('Error deleting meeting:', error);
+      alert('Failed to remove meeting. Please try again.');
     }
   };
 
@@ -99,11 +116,11 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="mt-8 min-h-screen bg-gradient-to-br from-wwc-50 via-white to-accent-50">
+    <div className="mt-4 min-h-screen bg-gradient-to-br from-wwc-50 via-white to-accent-50">
       <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div className="">
           {/* Header Section */}
-          <div className="text-center animate-slide-in-up">
+          <div className="text-center animate-slide-in-up mb-4">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-3xl shadow-hard ">
               <span className="text-white font-bold text-3xl font-display">
                 W
@@ -122,7 +139,7 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
             {/* Create Meeting Card */}
             <div className="bg-white overflow-hidden shadow-medium rounded-2xl border border-neutral-100 hover:shadow-hard transition-all duration-300 animate-slide-in-right">
-              <div className="p-8">
+              <div className="p-6">
                 <div className="flex items-center mb-6">
                   <div className="w-12 h-12 bg-gradient-to-br from-wwc-500 to-wwc-600 rounded-xl flex items-center justify-center shadow-soft mr-4">
                     <svg
@@ -204,7 +221,7 @@ const Dashboard = () => {
 
             {/* Join Meeting Card */}
             <div className="bg-white overflow-hidden shadow-medium rounded-2xl border border-neutral-100 hover:shadow-hard transition-all duration-300 animate-slide-in-right">
-              <div className="p-8">
+              <div className="p-6">
                 <div className="flex items-center mb-6">
                   <div className="w-12 h-12 bg-gradient-to-br from-success-500 to-success-600 rounded-xl flex items-center justify-center shadow-soft mr-4">
                     <svg
@@ -378,26 +395,38 @@ const Dashboard = () => {
                             meeting.status.slice(1)}
                         </span>
 
-                        {/* Delete Button */}
-                        <button
-                          onClick={() => handleDeleteMeeting(meeting.meetingId)}
-                          className="bg-white text-black border-2 border-black px-3 py-2 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-all duration-200 shadow-soft hover:shadow-medium"
-                          title="Delete Meeting"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                        </button>
+                        {/* Delete / Remove Button - visible to every user
+                            Host: deletes meeting for everyone; Non-host: removes meeting from your recents only */}
+                        {(() => {
+                          const hostId = meeting.host && (meeting.host._id ? String(meeting.host._id) : String(meeting.host));
+                          const isHost = hostId && String(hostId) === String(user?.id || user?._id);
+                          const btnLabel = isHost ? 'Delete' : 'Remove';
+                          const title = isHost ? 'Delete meeting for everyone' : 'Remove this meeting from your recent list';
+                          return (
+                            <button
+                              onClick={() => handleDeleteMeeting(meeting.meetingId)}
+                              className="bg-white text-black border-2 border-black px-3 py-2 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-all duration-200 shadow-soft hover:shadow-medium"
+                              title={title}
+                            >
+                              <div className="flex items-center">
+                                <svg
+                                  className="w-4 h-4 mr-2"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                  />
+                                </svg>
+                                {btnLabel}
+                              </div>
+                            </button>
+                          );
+                        })()}
 
                         {meeting.status !== "ended" && (
                           <button

@@ -1,7 +1,7 @@
 import React from "react";
 
 const AllUsers = ({ user, isMuted, participants }) => (
-  <div className="w-[400px] h-[565px] max-h-[calc(100vh-120px)] bg-white border-2 border-black rounded-2xl shadow-2xl flex flex-col overflow-hidden mb-20 mr-5 mt-1">
+  <div className="w-[380px] h-[620px] max-h-[calc(100vh-120px)] bg-white border-2 border-black rounded-2xl shadow-2xl flex flex-col overflow-hidden mb-20 mt-2 mr-5">
     <div className="p-4 border-b-2 border-black bg-neutral-50">
       <h3 className="font-bold text-neutral-900 font-display text-lg">
         Participants ({1 + (participants?.length || 0)})
