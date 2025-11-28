@@ -8,8 +8,6 @@ import meetingService from "../services/meetingService";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-
-
 const SOCKET_SERVER_URL =
   import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
 
@@ -92,7 +90,7 @@ const MeetingRoom = () => {
           track.enabled = !newMuted;
         });
       } catch (e) {
-        console.warn('Failed to toggle audio tracks', e);
+        console.warn("Failed to toggle audio tracks", e);
       }
     }
     setIsMuted(newMuted);
@@ -264,7 +262,7 @@ const MeetingRoom = () => {
         const res = await meetingService.getMeeting(meetingId);
         if (res.success) setMeeting(res.meeting);
       } catch (e) {
-        console.error('Failed to fetch meeting metadata', e);
+        console.error("Failed to fetch meeting metadata", e);
       }
     };
     fetchMeeting();
@@ -316,7 +314,7 @@ const MeetingRoom = () => {
               setMeeting(res.meeting);
             }
           } catch (e) {
-            console.warn('Could not persist join to meeting service', e);
+            console.warn("Could not persist join to meeting service", e);
           }
         })();
 
@@ -325,7 +323,6 @@ const MeetingRoom = () => {
         });
 
         sock.on("existing-participants", (existing) => {
-      
           const uniq = Array.from(
             new Map(existing.map((p) => [p.socketId, p])).values()
           ).filter((p) => p.socketId !== sock.id);
@@ -337,14 +334,12 @@ const MeetingRoom = () => {
         });
 
         sock.on("user-joined", (data) => {
-
           if (data.socketId === sock.id) return;
-          
+
           setParticipants((prev) => {
-        
             const exists = prev.some((p) => p.socketId === data.socketId);
             if (exists) {
-              return prev; 
+              return prev;
             }
             return [...prev, data];
           });
@@ -390,7 +385,6 @@ const MeetingRoom = () => {
 
         sock.on("user-left", ({ socketId }) => {
           console.log("User left:", socketId);
-          
 
           setParticipants((prev) =>
             prev.filter((p) => p.socketId !== socketId)
@@ -400,7 +394,7 @@ const MeetingRoom = () => {
             peerConnections.current[socketId].close();
             delete peerConnections.current[socketId];
           }
- 
+
           setRemoteStreams((prev) => {
             const copy = { ...prev };
             delete copy[socketId];
@@ -446,7 +440,7 @@ const MeetingRoom = () => {
 
     // handle meeting ended by host
     const onMeetingEnded = ({ meetingId: mid, reason }) => {
-      console.log('Meeting ended event received', mid, reason);
+      console.log("Meeting ended event received", mid, reason);
       setMeetingEnded(true);
 
       try {
@@ -461,16 +455,16 @@ const MeetingRoom = () => {
       } catch (e) {}
 
       setTimeout(() => {
-        navigate('/dashboard');
+        navigate("/dashboard");
       }, 1500);
     };
 
-    socket.on('meeting-ended', onMeetingEnded);
+    socket.on("meeting-ended", onMeetingEnded);
 
     return () => {
       socket.off("user-started-screen-share", onStart);
       socket.off("user-stopped-screen-share", onStop);
-      socket.off('meeting-ended', onMeetingEnded);
+      socket.off("meeting-ended", onMeetingEnded);
     };
   }, [socket]);
 
@@ -491,7 +485,7 @@ const MeetingRoom = () => {
     const userId = String(user._id || user.id || user);
     let hostId = null;
     if (meeting.host) {
-      if (typeof meeting.host === 'string') hostId = meeting.host;
+      if (typeof meeting.host === "string") hostId = meeting.host;
       else if (meeting.host._id) hostId = String(meeting.host._id);
       else hostId = String(meeting.host);
     }
@@ -502,7 +496,7 @@ const MeetingRoom = () => {
   const hostId = (() => {
     if (!meeting) return null;
     if (meeting.host) {
-      if (typeof meeting.host === 'string') return meeting.host;
+      if (typeof meeting.host === "string") return meeting.host;
       if (meeting.host._id) return String(meeting.host._id);
       return String(meeting.host);
     }
@@ -510,25 +504,30 @@ const MeetingRoom = () => {
   })();
 
   const startRecording = () => {
-    if (!mediaStream) return alert('No media stream (microphone) available');
+    if (!mediaStream) return alert("No media stream (microphone) available");
     (async () => {
       try {
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+        });
 
         const mixedStream = new MediaStream();
         screenStream.getVideoTracks().forEach((t) => mixedStream.addTrack(t));
-        if (mediaStream.getAudioTracks && mediaStream.getAudioTracks().length > 0) {
+        if (
+          mediaStream.getAudioTracks &&
+          mediaStream.getAudioTracks().length > 0
+        ) {
           mediaStream.getAudioTracks().forEach((t) => mixedStream.addTrack(t));
         }
 
         recordedChunksRef.current = [];
         const options = {};
-        if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
-          options.mimeType = 'video/webm;codecs=vp9';
-        } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
-          options.mimeType = 'video/webm;codecs=vp8';
-        } else if (MediaRecorder.isTypeSupported('video/webm')) {
-          options.mimeType = 'video/webm';
+        if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9")) {
+          options.mimeType = "video/webm;codecs=vp9";
+        } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp8")) {
+          options.mimeType = "video/webm;codecs=vp8";
+        } else if (MediaRecorder.isTypeSupported("video/webm")) {
+          options.mimeType = "video/webm";
         }
 
         const mr = new MediaRecorder(mixedStream, options);
@@ -543,40 +542,48 @@ const MeetingRoom = () => {
         mr.onstop = async () => {
           setIsRecording(false);
           // stop screen tracks
-          try { screenStream.getTracks().forEach((t) => t.stop()); } catch (e) {}
+          try {
+            screenStream.getTracks().forEach((t) => t.stop());
+          } catch (e) {}
 
-          const blob = new Blob(recordedChunksRef.current, { type: recordedChunksRef.current[0]?.type || 'video/webm' });
+          const blob = new Blob(recordedChunksRef.current, {
+            type: recordedChunksRef.current[0]?.type || "video/webm",
+          });
           recordedChunksRef.current = [];
 
           try {
-            const uploadRes = await meetingService.uploadRecording(meetingId, blob);
+            const uploadRes = await meetingService.uploadRecording(
+              meetingId,
+              blob
+            );
             if (uploadRes.success) {
-              console.log('Recording uploaded successfully');
+              console.log("Recording uploaded successfully");
               const m = await meetingService.getMeeting(meetingId);
               if (m.success) setMeeting(m.meeting);
             } else {
-              console.error('Failed to upload recording:', uploadRes.message);
+              console.error("Failed to upload recording:", uploadRes.message);
             }
           } catch (err) {
-            console.error('Upload error', err);
+            console.error("Upload error", err);
           }
         };
 
         const screenTrack = screenStream.getVideoTracks()[0];
         if (screenTrack) {
-          screenTrack.addEventListener('ended', () => {
+          screenTrack.addEventListener("ended", () => {
             try {
               const wrapped = mediaRecorderRefForRecording.current;
-              const rr = wrapped && wrapped.recorder ? wrapped.recorder : wrapped;
-              if (rr && rr.state !== 'inactive') rr.stop();
+              const rr =
+                wrapped && wrapped.recorder ? wrapped.recorder : wrapped;
+              if (rr && rr.state !== "inactive") rr.stop();
             } catch (e) {}
           });
         }
 
         mr.start(1000);
       } catch (err) {
-        console.error('Start recording failed', err);
-        alert('Could not start screen recording: ' + (err.message || err));
+        console.error("Start recording failed", err);
+        alert("Could not start screen recording: " + (err.message || err));
       }
     })();
   };
@@ -585,7 +592,7 @@ const MeetingRoom = () => {
     const wrapped = mediaRecorderRefForRecording.current;
     if (!wrapped) return;
     const mr = wrapped.recorder ? wrapped.recorder : wrapped;
-    if (mr && mr.state !== 'inactive') mr.stop();
+    if (mr && mr.state !== "inactive") mr.stop();
   };
 
   const createPeerConnection = (socketId, localStream, sock, isInitiator) => {

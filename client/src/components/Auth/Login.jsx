@@ -14,7 +14,6 @@ const Login = () => {
   const { dispatch, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
       if (user.name === "admin") {
@@ -48,7 +47,7 @@ const Login = () => {
             user: result.user,
           },
         });
-   
+
         if (result.data.user.name === "admin") {
           navigate("/admin-dashboard", { replace: true });
         } else {

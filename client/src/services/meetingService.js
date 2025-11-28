@@ -1,14 +1,6 @@
 import api from '../utils/api.js';
 
 class MeetingService {
-  /**
-   * Create a new meeting
-   * @param {Object} meetingData - Meeting creation data
-   * @param {string} meetingData.title - Meeting title
-   * @param {string} meetingData.description - Meeting description
-   * @param {Date} meetingData.scheduledTime - Scheduled meeting time
-   * @returns {Promise<Object>} Meeting creation response
-   */
   async createMeeting(meetingData) {
     try {
       const response = await api.post('/meetings', meetingData);
@@ -27,9 +19,6 @@ class MeetingService {
     }
   }
 
-  /**
-   * @returns {Promise<Object>} Meetings list response
-   */
   async getMeetings() {
     try {
       const response = await api.get('/meetings');
@@ -48,11 +37,6 @@ class MeetingService {
     }
   }
 
-  /**
-   * Get meeting by ID
-   * @param {string} meetingId - Meeting ID
-   * @returns {Promise<Object>} Meeting details response
-   */
   async getMeeting(meetingId) {
     try {
       const response = await api.get(`/meetings/${meetingId}`);
@@ -71,11 +55,6 @@ class MeetingService {
     }
   }
 
-  /**
-   * Join a meeting
-   * @param {string} meetingId - Meeting ID to join
-   * @returns {Promise<Object>} Join meeting response
-   */
   async joinMeeting(meetingId) {
     try {
       const response = await api.post(`/meetings/${meetingId}/join`);
@@ -94,11 +73,6 @@ class MeetingService {
     }
   }
 
-  /**
-   * Leave a meeting
-   * @param {string} meetingId - Meeting ID to leave
-   * @returns {Promise<Object>} Leave meeting response
-   */
   async leaveMeeting(meetingId) {
     try {
       const response = await api.post(`/meetings/${meetingId}/leave`);
@@ -116,12 +90,6 @@ class MeetingService {
     }
   }
 
-  /**
-   * Update meeting details
-   * @param {string} meetingId - Meeting ID
-   * @param {Object} updateData - Meeting update data
-   * @returns {Promise<Object>} Update response
-   */
   async updateMeeting(meetingId, updateData) {
     try {
       const response = await api.put(`/meetings/${meetingId}`, updateData);
@@ -140,11 +108,6 @@ class MeetingService {
     }
   }
 
-  /**
-   * Delete a meeting
-   * @param {string} meetingId - Meeting ID to delete
-   * @returns {Promise<Object>} Delete response
-   */
   async deleteMeeting(meetingId) {
     try {
       const response = await api.delete(`/meetings/${meetingId}`);
@@ -161,11 +124,6 @@ class MeetingService {
     }
   }
 
-  /**
-   * End a meeting
-   * @param {string} meetingId - Meeting ID to end
-   * @returns {Promise<Object>} End meeting response
-   */
   async endMeeting(meetingId) {
     try {
       const response = await api.post(`/meetings/${meetingId}/end`);
@@ -183,17 +141,10 @@ class MeetingService {
     }
   }
 
-  /**
-   * Upload a recording blob for a meeting
-   * @param {string} meetingId
-   * @param {Blob|File} fileBlob
-   */
   async uploadRecording(meetingId, fileBlob) {
     try {
       const formData = new FormData();
       formData.append('file', fileBlob, `recording-${meetingId}.webm`);
-
-      // Let the browser/axios set the correct multipart Content-Type (with boundary)
       const response = await api.post(`/meetings/${meetingId}/recordings`, formData);
 
       return { success: true, data: response.data };

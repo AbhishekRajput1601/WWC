@@ -14,7 +14,6 @@ const Meetingheaderbar = ({
     <div className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm border-b border-neutral-200 px-6 py-4 shadow-soft">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-6 ml-32">
-          {/* WWC Logo */}
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-xl flex items-center justify-center shadow-soft">
               <span className="text-white font-bold text-lg font-display">
@@ -30,7 +29,7 @@ const Meetingheaderbar = ({
               </p>
             </div>
           </div>
-          {/* Connection Status */}
+
           <div className="flex items-center space-x-2 bg-success-100 border border-success-200 rounded-full px-3 py-1">
             <div className="w-2 h-2 bg-success-500 rounded-full animate-pulse"></div>
             <span className="text-success-700 text-sm font-medium">
@@ -38,7 +37,7 @@ const Meetingheaderbar = ({
             </span>
           </div>
         </div>
-        {/* Navigation Buttons */}
+
         <div className="flex space-x-5 ml-96 mr-36">
           <button
             onClick={() =>

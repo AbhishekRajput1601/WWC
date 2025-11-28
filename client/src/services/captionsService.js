@@ -1,10 +1,10 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const captionsService = {
-  async getCaptions(meetingId, language = 'en', limit = 50, page = 1) {
-    const token = localStorage.getItem('token');
+  async getCaptions(meetingId, language = "en", limit = 50, page = 1) {
+    const token = localStorage.getItem("token");
     const res = await axios.get(`${API_URL}/captions/${meetingId}`, {
       params: { language, limit, page },
       headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -12,22 +12,22 @@ const captionsService = {
     return res.data;
   },
 
-  async exportCaptions(meetingId, language = 'en', format = 'txt') {
-    const token = localStorage.getItem('token');
+  async exportCaptions(meetingId, language = "en", format = "txt") {
+    const token = localStorage.getItem("token");
     const res = await axios.get(`${API_URL}/captions/${meetingId}/export`, {
       params: { language, format },
       headers: token ? { Authorization: `Bearer ${token}` } : {},
-      responseType: 'blob',
+      responseType: "blob",
     });
     return res.data;
   },
 
-  async transcribeAudio(audioBlob, language = 'en', translate = false) {
-    const token = localStorage.getItem('token');
+  async transcribeAudio(audioBlob, language = "en", translate = false) {
+    const token = localStorage.getItem("token");
     const formData = new FormData();
-    formData.append('audio', audioBlob, 'audio.wav');
-    formData.append('language', language);
-    formData.append('translate', translate ? 'true' : 'false');
+    formData.append("audio", audioBlob, "audio.wav");
+    formData.append("language", language);
+    formData.append("translate", translate ? "true" : "false");
     const res = await axios.post(`${API_URL}/whisper/transcribe`, formData, {
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),

@@ -12,7 +12,7 @@ const Chat = ({ socket: externalSocket }) => {
 
   useEffect(() => {
     const sock = externalSocket;
-    if (!sock) return; 
+    if (!sock) return;
 
     const onChatMessage = (msg) => {
       setMessages((prev) => [
@@ -162,11 +162,19 @@ const Chat = ({ socket: externalSocket }) => {
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <button onClick={goBackToMeeting} className="px-3 py-1 rounded-lg bg-white/20 text-white text-sm hover:bg-white/30">Top</button>
+          <button
+            onClick={goBackToMeeting}
+            className="px-3 py-1 rounded-lg bg-white/20 text-white text-sm hover:bg-white/30"
+          >
+            Top
+          </button>
         </div>
       </div>
 
-      <div ref={containerRef} className="flex-1 overflow-y-auto p-4 bg-neutral-50 space-y-4">
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-y-auto p-4 bg-neutral-50 space-y-4"
+      >
         {messages.length === 0 ? (
           <div className="text-center py-8">
             <div className="w-12 h-12 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -184,72 +192,136 @@ const Chat = ({ socket: externalSocket }) => {
                 />
               </svg>
             </div>
-            <p className="text-neutral-500 text-base font-semibold">No messages yet</p>
-            <p className="text-neutral-400 text-xs mt-1">Start the conversation!</p>
+            <p className="text-neutral-500 text-base font-semibold">
+              No messages yet
+            </p>
+            <p className="text-neutral-400 text-xs mt-1">
+              Start the conversation!
+            </p>
           </div>
         ) : (
           messages.map((message, index) => {
-            const isOwn = message.senderId === user?.id || message.sender === user?.name;
+            const isOwn =
+              message.senderId === user?.id || message.sender === user?.name;
             return (
-              <div key={message.id || index} className={`flex items-start ${isOwn ? 'justify-end' : 'justify-start'}`}>
+              <div
+                key={message.id || index}
+                className={`flex items-start ${
+                  isOwn ? "justify-end" : "justify-start"
+                }`}
+              >
                 {!isOwn && (
                   <div className="w-8 h-8 bg-gradient-to-br from-accent-500 to-accent-600 rounded-full flex items-center justify-center flex-shrink-0 mr-3">
-                    <span className="text-white font-bold text-sm">{message.sender?.[0] || 'U'}</span>
+                    <span className="text-white font-bold text-sm">
+                      {message.sender?.[0] || "U"}
+                    </span>
                   </div>
                 )}
-                <div className={`max-w-[240px] ${isOwn ? 'text-right' : 'text-left'}`}>
+                <div
+                  className={`max-w-[240px] ${
+                    isOwn ? "text-right" : "text-left"
+                  }`}
+                >
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center space-x-2">
-                      <p className="text-sm font-semibold text-neutral-900">{message.sender}</p>
-                      <p className="text-xs text-neutral-400">{message.timestamp}</p>
+                      <p className="text-sm font-semibold text-neutral-900">
+                        {message.sender}
+                      </p>
+                      <p className="text-xs text-neutral-400">
+                        {message.timestamp}
+                      </p>
                     </div>
                     {isOwn && (
-                      <button onClick={() => handleDeleteMessage(message.id)} title="Delete message" className="ml-2 text-neutral-500 hover:text-red-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <button
+                        onClick={() => handleDeleteMessage(message.id)}
+                        title="Delete message"
+                        className="ml-2 text-neutral-500 hover:text-red-500"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
                         </svg>
                       </button>
                     )}
                   </div>
-                  <div className={`${isOwn ? 'bg-wwc-600 text-white' : 'bg-white'} rounded-xl px-3 py-2 border ${isOwn ? 'border-wwc-600' : 'border-neutral-200'} shadow-sm`}> 
-                    <p className={`leading-relaxed text-sm break-words ${isOwn ? '' : 'text-neutral-700'}`}>{message.text}</p>
+                  <div
+                    className={`${
+                      isOwn ? "bg-wwc-600 text-white" : "bg-white"
+                    } rounded-xl px-3 py-2 border ${
+                      isOwn ? "border-wwc-600" : "border-neutral-200"
+                    } shadow-sm`}
+                  >
+                    <p
+                      className={`leading-relaxed text-sm break-words ${
+                        isOwn ? "" : "text-neutral-700"
+                      }`}
+                    >
+                      {message.text}
+                    </p>
                   </div>
                 </div>
                 {isOwn && (
                   <div className="w-8 h-8 bg-gradient-to-br from-accent-500 to-accent-600 rounded-full flex items-center justify-center flex-shrink-0 ml-3">
-                    <span className="text-white font-bold text-sm">{message.sender?.[0] || 'U'}</span>
+                    <span className="text-white font-bold text-sm">
+                      {message.sender?.[0] || "U"}
+                    </span>
                   </div>
                 )}
               </div>
             );
           })
         )}
-        </div>
-        {/* Chat Input */}
-        <div className="p-3 border-t-2 border-black bg-white">
-          <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-              placeholder="Type your message..."
-              className="flex-1 px-3 py-2 border-2 border-neutral-200 rounded-xl text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-wwc-600 focus:border-wwc-600 transition-all duration-200 bg-neutral-50 shadow-sm text-sm"
-            />
-            <button
-              type="submit"
-              disabled={!newMessage.trim()}
-              className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 shadow-soft hover:shadow-medium ${
-                newMessage.trim() ? 'bg-wwc-600 text-white border-wwc-700' : 'bg-neutral-100 text-neutral-400 border-neutral-200 cursor-not-allowed'
-              }`}
+      </div>
+      {/* Chat Input */}
+      <div className="p-3 border-t-2 border-black bg-white">
+        <form
+          onSubmit={handleSendMessage}
+          className="flex items-center space-x-2"
+        >
+          <input
+            type="text"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+            placeholder="Type your message..."
+            className="flex-1 px-3 py-2 border-2 border-neutral-200 rounded-xl text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-wwc-600 focus:border-wwc-600 transition-all duration-200 bg-neutral-50 shadow-sm text-sm"
+          />
+          <button
+            type="submit"
+            disabled={!newMessage.trim()}
+            className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 shadow-soft hover:shadow-medium ${
+              newMessage.trim()
+                ? "bg-wwc-600 text-white border-wwc-700"
+                : "bg-neutral-100 text-neutral-400 border-neutral-200 cursor-not-allowed"
+            }`}
+          >
+            <svg
+              className="w-4 h-4 inline-block mr-1"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
             >
-              <svg className="w-4 h-4 inline-block mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-              </svg>
-              <span className="align-middle">Send</span>
-            </button>
-          </form>
-        </div>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+              />
+            </svg>
+            <span className="align-middle">Send</span>
+          </button>
+        </form>
+      </div>
     </div>
   );
 };

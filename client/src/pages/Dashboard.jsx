@@ -55,12 +55,12 @@ const Dashboard = () => {
             meetingId: joinMeetingId.trim(),
             userId: user.id,
           });
-          // If server returned meeting data, add it to recent meetings list
           if (res && res.data && res.data.data) {
             const joinedMeeting = res.data.data;
-            // avoid duplicates
             setMeetings((prev) => {
-              const exists = prev.some((m) => m.meetingId === joinedMeeting.meetingId);
+              const exists = prev.some(
+                (m) => m.meetingId === joinedMeeting.meetingId
+              );
               if (exists) return prev;
               return [joinedMeeting, ...prev];
             });
@@ -76,22 +76,28 @@ const Dashboard = () => {
 
   const handleDeleteMeeting = async (meetingId) => {
     const meetingObj = meetings.find((m) => m.meetingId === meetingId);
-    const hostId = meetingObj && meetingObj.host && (meetingObj.host._id ? String(meetingObj.host._id) : String(meetingObj.host));
+    const hostId =
+      meetingObj &&
+      meetingObj.host &&
+      (meetingObj.host._id
+        ? String(meetingObj.host._id)
+        : String(meetingObj.host));
     const isHost = hostId && String(hostId) === String(user?.id || user?._id);
 
     const confirmMessage = isHost
-      ? 'Are you sure you want to DELETE this meeting for everyone? This action cannot be undone.'
-      : 'Remove this meeting from your recent meetings? This will not affect other users.';
+      ? "Are you sure you want to DELETE this meeting for everyone? This action cannot be undone."
+      : "Remove this meeting from your recent meetings? This will not affect other users.";
 
     if (!window.confirm(confirmMessage)) return;
 
     try {
       const res = await api.delete(`/meetings/delete-meeting/${meetingId}`);
-      // Remove from local list regardless of server-side action (host will have removed it globally, non-host removed their participant)
-      setMeetings((prev) => prev.filter((meeting) => meeting.meetingId !== meetingId));
+      setMeetings((prev) =>
+        prev.filter((meeting) => meeting.meetingId !== meetingId)
+      );
     } catch (error) {
-      console.error('Error deleting meeting:', error);
-      alert('Failed to remove meeting. Please try again.');
+      console.error("Error deleting meeting:", error);
+      alert("Failed to remove meeting. Please try again.");
     }
   };
 
@@ -135,9 +141,7 @@ const Dashboard = () => {
             </p>
           </div>
 
-          {/* Quick Actions */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-            {/* Create Meeting Card */}
             <div className="bg-white overflow-hidden shadow-medium rounded-2xl border border-neutral-100 hover:shadow-hard transition-all duration-300 animate-slide-in-right">
               <div className="p-6">
                 <div className="flex items-center mb-6">
@@ -395,16 +399,24 @@ const Dashboard = () => {
                             meeting.status.slice(1)}
                         </span>
 
-                        {/* Delete / Remove Button - visible to every user
-                            Host: deletes meeting for everyone; Non-host: removes meeting from your recents only */}
                         {(() => {
-                          const hostId = meeting.host && (meeting.host._id ? String(meeting.host._id) : String(meeting.host));
-                          const isHost = hostId && String(hostId) === String(user?.id || user?._id);
-                          const btnLabel = isHost ? 'Delete' : 'Remove';
-                          const title = isHost ? 'Delete meeting for everyone' : 'Remove this meeting from your recent list';
+                          const hostId =
+                            meeting.host &&
+                            (meeting.host._id
+                              ? String(meeting.host._id)
+                              : String(meeting.host));
+                          const isHost =
+                            hostId &&
+                            String(hostId) === String(user?.id || user?._id);
+                          const btnLabel = isHost ? "Delete" : "Remove";
+                          const title = isHost
+                            ? "Delete meeting for everyone"
+                            : "Remove this meeting from your recent list";
                           return (
                             <button
-                              onClick={() => handleDeleteMeeting(meeting.meetingId)}
+                              onClick={() =>
+                                handleDeleteMeeting(meeting.meetingId)
+                              }
                               className="bg-white text-black border-2 border-black px-3 py-2 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-all duration-200 shadow-soft hover:shadow-medium"
                               title={title}
                             >

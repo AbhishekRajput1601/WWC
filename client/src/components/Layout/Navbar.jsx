@@ -60,10 +60,9 @@ const Navbar = () => {
                       </span>
                     </span>
                   </div>
-                
+
                   <Link to="/profile" className="flex items-center group">
                     <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center shadow-soft group-hover:shadow-medium transition-all duration-200 group-hover:scale-105 mr-2">
-                 
                       {user?.avatarUrl ? (
                         <img
                           src={user.avatarUrl}

@@ -8,7 +8,6 @@ const AllUsers = ({ user, isMuted, participants }) => (
       </h3>
     </div>
     <div className="flex-1 overflow-y-auto p-4 space-y-3">
-      {/* Host (You) */}
       <div className="flex items-center justify-between p-3 bg-wwc-50 rounded-xl border border-wwc-200 w-full relative">
         <div className="flex items-center space-x-3">
           <div className="w-9 h-9 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-full flex items-center justify-center">
@@ -24,12 +23,10 @@ const AllUsers = ({ user, isMuted, participants }) => (
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          {/* LIVE indicator */}
           <div className="bg-error-500 text-black px-2 py-0.5 rounded-full text-xs font-semibold flex items-center space-x-1 shadow-lg">
             <div className="w-2 h-2 rounded-full animate-pulse"></div>
             <span>LIVE</span>
           </div>
-          {/* Mic status */}
           {!isMuted ? (
             <div className="w-6 h-6 bg-success-600 rounded-md flex items-center justify-center">
               <svg
@@ -65,7 +62,6 @@ const AllUsers = ({ user, isMuted, participants }) => (
           )}
         </div>
       </div>
-      {/* Other participants */}
       {participants &&
         participants.map((p) => (
           <div
@@ -85,13 +81,13 @@ const AllUsers = ({ user, isMuted, participants }) => (
                 <p className="text-xs text-neutral-500 font-medium">Guest</p>
               </div>
             </div>
-    
+
             <div className="flex items-center space-x-2">
               <div className="bg-error-500 text-black px-2 py-0.5 rounded-full text-xs font-semibold flex items-center space-x-1 shadow-lg">
                 <div className="w-2 h-2 rounded-full animate-pulse"></div>
                 <span>LIVE</span>
               </div>
-        
+
               <div className="w-6 h-6 bg-success-600 rounded-md flex items-center justify-center">
                 <svg
                   className="w-4 h-4 text-white"
