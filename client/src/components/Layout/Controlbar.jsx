@@ -50,6 +50,19 @@ const Controlbar = ({
     } catch (e) {}
     if (navigate) navigate("/dashboard");
   };
+
+  const handleCopyLink = () => {
+    const meetingLink = `${window.location.origin}/meeting/${meetingId}`;
+    navigator.clipboard.writeText(meetingLink).then(
+      () => {
+        alert("Meeting link copied to clipboard!");
+      },
+      (err) => {
+        console.error("Could not copy text: ", err);
+        alert("Failed to copy link. Please copy manually: " + meetingLink);
+      }
+    );
+  };
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-neutral-200 px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 shadow-hard">
       <div className="flex items-center justify-center space-x-1 sm:space-x-2 md:space-x-4 overflow-x-auto">
@@ -106,6 +119,27 @@ const Controlbar = ({
               />
             </svg>
             <span className="hidden xs:inline">Chat</span>
+          </button>
+
+          <button
+            onClick={handleCopyLink}
+            className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-medium transition-all duration-200 border-2 border-black text-xs sm:text-sm flex items-center space-x-1 sm:space-x-2 bg-white text-black hover:bg-gray-200"
+            title="Copy meeting link"
+          >
+            <svg
+              className="w-3 h-3 sm:w-4 sm:h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+              />
+            </svg>
+            <span className="hidden xs:inline">Copy Link</span>
           </button>
         </div>
         <button
