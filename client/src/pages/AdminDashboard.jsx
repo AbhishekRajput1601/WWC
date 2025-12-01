@@ -346,20 +346,20 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-10 px-4">
-      <h1 className="text-4xl font-bold text-neutral-900 mb-2">
+    <div className="max-w-7xl mx-auto py-6 sm:py-8 md:py-10 px-3 sm:px-4 md:px-6">
+      <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-neutral-900 mb-1.5 sm:mb-2">
         Admin Dashboard
       </h1>
-      <h2 className="text-lg font-medium text-neutral-700 mb-8">
+      <h2 className="text-sm sm:text-base md:text-lg font-medium text-neutral-700 mb-6 sm:mb-8 truncate">
         Logged in as: {user?.name} ({user?.role})
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-wwc-500 to-wwc-600 rounded-2xl shadow-medium p-6 text-white">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-white/20 rounded-xl p-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6 mb-6 sm:mb-8">
+        <div className="bg-gradient-to-br from-wwc-500 to-wwc-600 rounded-xl sm:rounded-2xl shadow-medium p-4 sm:p-5 md:p-6 text-white">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="bg-white/20 rounded-lg sm:rounded-xl p-2 sm:p-2.5 md:p-3">
               <svg
-                className="w-6 h-6"
+                className="w-5 h-5 sm:w-6 sm:h-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -372,19 +372,19 @@ const AdminDashboard = () => {
                 />
               </svg>
             </div>
-            <span className="text-3xl font-bold">{stats.totalUsers}</span>
+            <span className="text-2xl sm:text-3xl font-bold">{stats.totalUsers}</span>
           </div>
-          <h3 className="text-sm font-medium opacity-90">Total Users</h3>
-          <p className="text-xs opacity-75 mt-1">
+          <h3 className="text-xs sm:text-sm font-medium opacity-90">Total Users</h3>
+          <p className="text-[10px] sm:text-xs opacity-75 mt-0.5 sm:mt-1">
             {stats.adminUsers} admins, {stats.regularUsers} users
           </p>
         </div>
 
-        <div className="bg-gradient-to-br from-accent-500 to-accent-600 rounded-2xl shadow-medium p-6 text-white">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-white/20 rounded-xl p-3">
+        <div className="bg-gradient-to-br from-accent-500 to-accent-600 rounded-xl sm:rounded-2xl shadow-medium p-4 sm:p-5 md:p-6 text-white">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="bg-white/20 rounded-lg sm:rounded-xl p-2 sm:p-2.5 md:p-3">
               <svg
-                className="w-6 h-6"
+                className="w-5 h-5 sm:w-6 sm:h-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -397,19 +397,19 @@ const AdminDashboard = () => {
                 />
               </svg>
             </div>
-            <span className="text-3xl font-bold">{stats.totalMeetings}</span>
+            <span className="text-2xl sm:text-3xl font-bold">{stats.totalMeetings}</span>
           </div>
-          <h3 className="text-sm font-medium opacity-90">Total Meetings</h3>
-          <p className="text-xs opacity-75 mt-1">
+          <h3 className="text-xs sm:text-sm font-medium opacity-90">Total Meetings</h3>
+          <p className="text-[10px] sm:text-xs opacity-75 mt-0.5 sm:mt-1">
             {stats.activeMeetings} active, {stats.scheduledMeetings} scheduled
           </p>
         </div>
 
-        <div className="bg-gradient-to-br from-success-500 to-success-600 rounded-2xl shadow-medium p-6 text-white">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-white/20 rounded-xl p-3">
+        <div className="bg-gradient-to-br from-success-500 to-success-600 rounded-xl sm:rounded-2xl shadow-medium p-4 sm:p-5 md:p-6 text-white">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="bg-white/20 rounded-lg sm:rounded-xl p-2 sm:p-2.5 md:p-3">
               <svg
-                className="w-6 h-6"
+                className="w-5 h-5 sm:w-6 sm:h-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -422,23 +422,23 @@ const AdminDashboard = () => {
                 />
               </svg>
             </div>
-            <span className="text-3xl font-bold">
+            <span className="text-2xl sm:text-3xl font-bold">
               {stats.activeParticipants}
             </span>
           </div>
-          <h3 className="text-sm font-medium opacity-90">
+          <h3 className="text-xs sm:text-sm font-medium opacity-90">
             Active Participants
           </h3>
-          <p className="text-xs opacity-75 mt-1">
+          <p className="text-[10px] sm:text-xs opacity-75 mt-0.5 sm:mt-1">
             {stats.totalParticipants} total participants
           </p>
         </div>
 
-        <div className="bg-gradient-to-br from-neutral-500 to-neutral-600 rounded-2xl shadow-medium p-6 text-white">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-white/20 rounded-xl p-3">
+        <div className="bg-gradient-to-br from-neutral-500 to-neutral-600 rounded-xl sm:rounded-2xl shadow-medium p-4 sm:p-5 md:p-6 text-white">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="bg-white/20 rounded-lg sm:rounded-xl p-2 sm:p-2.5 md:p-3">
               <svg
-                className="w-6 h-6"
+                className="w-5 h-5 sm:w-6 sm:h-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -451,20 +451,20 @@ const AdminDashboard = () => {
                 />
               </svg>
             </div>
-            <span className="text-3xl font-bold">{stats.endedMeetings}</span>
+            <span className="text-2xl sm:text-3xl font-bold">{stats.endedMeetings}</span>
           </div>
-          <h3 className="text-sm font-medium opacity-90">Ended Meetings</h3>
-          <p className="text-xs opacity-75 mt-1">Completed sessions</p>
+          <h3 className="text-xs sm:text-sm font-medium opacity-90">Ended Meetings</h3>
+          <p className="text-[10px] sm:text-xs opacity-75 mt-0.5 sm:mt-1">Completed sessions</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div className="bg-white rounded-2xl shadow-medium border border-neutral-100 p-6">
-          <h2 className="text-xl font-bold text-neutral-900 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-medium border border-neutral-100 p-4 sm:p-5 md:p-6">
+          <h2 className="text-base sm:text-lg md:text-xl font-bold text-neutral-900 mb-4 sm:mb-5 md:mb-6">
             Meeting Status Distribution
           </h2>
           <div className="flex items-center justify-center">
-            <div className="relative w-48 h-48">
+            <div className="relative w-36 h-36 sm:w-44 sm:h-44 md:w-48 md:h-48">
               {stats.totalMeetings > 0 ? (
                 <>
                   <svg

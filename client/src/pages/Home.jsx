@@ -7,22 +7,22 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-wwc-50 via-white to-accent-50">
-      <div className="max-w-7xl mx-auto px-4 ">
-        <div className="pt-20 pb-16 text-center lg:pt-32">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+        <div className="pt-12 sm:pt-16 md:pt-20 pb-12 sm:pb-16 text-center lg:pt-32">
           {/* Hero Section */}
           <div className="animate-fade-in">
-            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-3xl flex items-center justify-center shadow-hard">
-              <span className="text-white font-bold text-3xl font-display">
+            <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-hard mb-4 sm:mb-6">
+              <span className="text-white font-bold text-2xl sm:text-3xl font-display">
                 W
               </span>
             </div>
-            <h1 className="mx-auto max-w-4xl font-display text-5xl font-bold tracking-tight text-neutral-900 sm:text-7xl">
+            <h1 className="mx-auto max-w-4xl font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-neutral-900 lg:text-7xl px-2">
               Welcome to{" "}
               <span className="relative whitespace-nowrap text-wwc-600">
                 <svg
                   aria-hidden="true"
                   viewBox="0 0 418 42"
-                  className="absolute top-2/3 left-0 h-[0.58em] w-full fill-wwc-200/70"
+                  className="absolute top-2/3 left-0 h-[0.58em] w-full fill-wwc-200/70 hidden sm:block"
                   preserveAspectRatio="none"
                 >
                   <path d="m203.371.916c-26.013-2.078-76.686 1.963-124.73 9.946L67.3 12.749C35.421 18.062 18.2 21.766 6.004 25.934 1.244 27.561.828 27.778.874 28.61c.07 1.214.828 1.121 9.595-1.176 9.072-2.377 17.15-3.92 39.246-7.496C123.565 7.986 157.869 4.492 195.942 5.046c7.461.108 19.25 1.696 19.17 2.582-.107 1.183-7.874 4.31-25.75 10.366-21.992 7.45-35.43 12.534-36.701 13.884-2.173 2.308-.202 4.407 4.442 4.734 2.654.187 3.263.157 15.593-.78 35.401-2.686 57.944-3.488 88.365-3.143 46.327.526 75.721 2.23 130.788 7.584 19.787 1.924 20.814 1.98 24.557 1.332l.066-.011c1.201-.203 1.53-1.825.399-2.335-2.911-1.31-4.893-1.604-22.048-3.261-57.509-5.556-87.871-7.36-132.059-7.842-23.239-.254-33.617-.116-50.627.674-11.629.54-42.371 2.494-46.696 2.967-2.359.259 8.133-3.625 26.504-9.81 23.239-7.825 27.934-10.149 28.304-14.005.417-4.348-3.529-6-16.878-7.066Z" />
@@ -30,7 +30,7 @@ const Home = () => {
                 <span className="relative">WWC</span>
               </span>
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-xl leading-8 text-neutral-600">
+            <p className="mx-auto mt-4 sm:mt-6 max-w-2xl text-sm sm:text-base md:text-lg lg:text-xl leading-6 sm:leading-7 md:leading-8 text-neutral-600 px-4">
               The world's most advanced video conferencing platform with{" "}
               <span className="font-semibold text-wwc-700">
                 real-time captions
@@ -43,14 +43,14 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="mt-12 flex justify-center gap-6 animate-slide-in-up">
+          <div className="mt-8 sm:mt-10 md:mt-12 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 md:gap-6 animate-slide-in-up px-4">
             {isAuthenticated ? (
               <Link
                 to="/dashboard"
-                className="group inline-flex items-center justify-center rounded-2xl py-4 px-8 text-lg font-semibold border-2 border-black bg-white text-black hover:bg-gray-200 transition-all duration-300 shadow-soft hover:shadow-hard transform hover:-translate-y-1"
+                className="group inline-flex items-center justify-center rounded-xl sm:rounded-2xl py-3 sm:py-3.5 md:py-4 px-6 sm:px-7 md:px-8 text-sm sm:text-base md:text-lg font-semibold border-2 border-black bg-white text-black hover:bg-gray-200 transition-all duration-300 shadow-soft hover:shadow-hard transform hover:-translate-y-1 w-full sm:w-auto"
               >
                 <svg
-                  className="w-5 h-5 mr-2"
+                  className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -68,10 +68,10 @@ const Home = () => {
               <>
                 <Link
                   to="/signup"
-                  className="group inline-flex items-center justify-center rounded-2xl py-4 px-8 text-lg font-semibold border-2 border-black bg-white text-black hover:bg-gray-200 transition-all duration-300 shadow-soft hover:shadow-hard transform hover:-translate-y-1"
+                  className="group inline-flex items-center justify-center rounded-xl sm:rounded-2xl py-3 sm:py-3.5 md:py-4 px-6 sm:px-7 md:px-8 text-sm sm:text-base md:text-lg font-semibold border-2 border-black bg-white text-black hover:bg-gray-200 transition-all duration-300 shadow-soft hover:shadow-hard transform hover:-translate-y-1 w-full sm:w-auto"
                 >
                   <svg
-                    className="w-5 h-5 mr-2"
+                    className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -87,10 +87,10 @@ const Home = () => {
                 </Link>
                 <Link
                   to="/login"
-                  className="group inline-flex items-center justify-center rounded-2xl py-4 px-8 text-lg font-semibold border-2 border-black bg-white text-black hover:bg-gray-200 transition-all duration-300 shadow-soft hover:shadow-medium transform hover:-translate-y-1"
+                  className="group inline-flex items-center justify-center rounded-xl sm:rounded-2xl py-3 sm:py-3.5 md:py-4 px-6 sm:px-7 md:px-8 text-sm sm:text-base md:text-lg font-semibold border-2 border-black bg-white text-black hover:bg-gray-200 transition-all duration-300 shadow-soft hover:shadow-medium transform hover:-translate-y-1 w-full sm:w-auto"
                 >
                   <svg
-                    className="w-5 h-5 mr-2"
+                    className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -110,12 +110,12 @@ const Home = () => {
         </div>
 
         {/* Features Section */}
-        <div className="py-20 bg-white/60 backdrop-blur-sm">
-          <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="py-12 sm:py-16 md:py-20 bg-white/60 backdrop-blur-sm">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-2xl lg:text-center animate-slide-in-up">
-              <div className="inline-flex items-center rounded-full px-4 py-2 bg-wwc-100 text-wwc-700 font-semibold text-sm mb-4">
+              <div className="inline-flex items-center rounded-full px-3 sm:px-4 py-1.5 sm:py-2 bg-wwc-100 text-wwc-700 font-semibold text-xs sm:text-sm mb-3 sm:mb-4">
                 <svg
-                  className="w-4 h-4 mr-2"
+                  className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -129,23 +129,23 @@ const Home = () => {
                 </svg>
                 Everything you need
               </div>
-              <h2 className="text-4xl font-bold tracking-tight text-neutral-900 sm:text-5xl font-display">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-neutral-900 lg:text-5xl font-display px-2">
                 Revolutionary Features for
                 <span className="text-wwc-600"> Modern Teams</span>
               </h2>
-              <p className="mt-6 text-lg leading-8 text-neutral-600">
+              <p className="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg leading-6 sm:leading-7 md:leading-8 text-neutral-600 px-4">
                 Experience the next generation of video conferencing with
                 AI-powered features designed for seamless global communication.
               </p>
             </div>
 
-            <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
-              <dl className="grid max-w-xl grid-cols-1 gap-8 lg:max-w-none lg:grid-cols-3">
-                <div className="group flex flex-col bg-white rounded-2xl p-8 shadow-soft hover:shadow-medium transition-all duration-300 hover:-translate-y-2 border border-neutral-100">
-                  <dt className="flex items-center gap-x-3 text-lg font-bold leading-7 text-neutral-900 mb-4">
-                    <div className="h-12 w-12 flex items-center justify-center rounded-xl bg-gradient-to-br from-wwc-500 to-wwc-600 group-hover:from-wwc-600 group-hover:to-wwc-700 transition-all duration-300 shadow-soft">
+            <div className="mx-auto mt-10 sm:mt-12 md:mt-16 max-w-2xl lg:mt-24 lg:max-w-none">
+              <dl className="grid max-w-xl grid-cols-1 gap-6 sm:gap-8 lg:max-w-none lg:grid-cols-3">
+                <div className="group flex flex-col bg-white rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 shadow-soft hover:shadow-medium transition-all duration-300 hover:-translate-y-2 border border-neutral-100">
+                  <dt className="flex items-center gap-x-2.5 sm:gap-x-3 text-base sm:text-lg font-bold leading-6 sm:leading-7 text-neutral-900 mb-3 sm:mb-4">
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center rounded-lg sm:rounded-xl bg-gradient-to-br from-wwc-500 to-wwc-600 group-hover:from-wwc-600 group-hover:to-wwc-700 transition-all duration-300 shadow-soft">
                       <svg
-                        className="h-7 w-7 text-white"
+                        className="h-6 w-6 sm:h-7 sm:w-7 text-white"
                         fill="none"
                         viewBox="0 0 24 24"
                         strokeWidth="2"
@@ -160,7 +160,7 @@ const Home = () => {
                     </div>
                     Ultra HD Video Calls
                   </dt>
-                  <dd className="flex flex-auto flex-col text-base leading-7 text-neutral-600">
+                  <dd className="flex flex-auto flex-col text-sm sm:text-base leading-6 sm:leading-7 text-neutral-600">
                     <p className="flex-auto">
                       Experience crystal-clear 4K video quality with adaptive
                       streaming and WebRTC technology for flawless communication
@@ -169,11 +169,11 @@ const Home = () => {
                   </dd>
                 </div>
 
-                <div className="group flex flex-col bg-white rounded-2xl p-8 shadow-soft hover:shadow-medium transition-all duration-300 hover:-translate-y-2 border border-neutral-100">
-                  <dt className="flex items-center gap-x-3 text-lg font-bold leading-7 text-neutral-900 mb-4">
-                    <div className="h-12 w-12 flex items-center justify-center rounded-xl bg-gradient-to-br from-accent-500 to-accent-600 group-hover:from-accent-600 group-hover:to-accent-700 transition-all duration-300 shadow-soft">
+                <div className="group flex flex-col bg-white rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 shadow-soft hover:shadow-medium transition-all duration-300 hover:-translate-y-2 border border-neutral-100">
+                  <dt className="flex items-center gap-x-2.5 sm:gap-x-3 text-base sm:text-lg font-bold leading-6 sm:leading-7 text-neutral-900 mb-3 sm:mb-4">
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center rounded-lg sm:rounded-xl bg-gradient-to-br from-accent-500 to-accent-600 group-hover:from-accent-600 group-hover:to-accent-700 transition-all duration-300 shadow-soft">
                       <svg
-                        className="h-7 w-7 text-white"
+                        className="h-6 w-6 sm:h-7 sm:w-7 text-white"
                         fill="none"
                         viewBox="0 0 24 24"
                         strokeWidth="2"
@@ -188,7 +188,7 @@ const Home = () => {
                     </div>
                     AI-Powered Captions
                   </dt>
-                  <dd className="flex flex-auto flex-col text-base leading-7 text-neutral-600">
+                  <dd className="flex flex-auto flex-col text-sm sm:text-base leading-6 sm:leading-7 text-neutral-600">
                     <p className="flex-auto">
                       Advanced AI converts speech to text in real-time with 99%
                       accuracy, making every meeting accessible and searchable
@@ -197,11 +197,11 @@ const Home = () => {
                   </dd>
                 </div>
 
-                <div className="group flex flex-col bg-white rounded-2xl p-8 shadow-soft hover:shadow-medium transition-all duration-300 hover:-translate-y-2 border border-neutral-100">
-                  <dt className="flex items-center gap-x-3 text-lg font-bold leading-7 text-neutral-900 mb-4">
-                    <div className="h-12 w-12 flex items-center justify-center rounded-xl bg-gradient-to-br from-success-500 to-success-600 group-hover:from-success-600 group-hover:to-success-700 transition-all duration-300 shadow-soft">
+                <div className="group flex flex-col bg-white rounded-xl sm:rounded-2xl p-5 sm:p-6 md:p-8 shadow-soft hover:shadow-medium transition-all duration-300 hover:-translate-y-2 border border-neutral-100">
+                  <dt className="flex items-center gap-x-2.5 sm:gap-x-3 text-base sm:text-lg font-bold leading-6 sm:leading-7 text-neutral-900 mb-3 sm:mb-4">
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center rounded-lg sm:rounded-xl bg-gradient-to-br from-success-500 to-success-600 group-hover:from-success-600 group-hover:to-success-700 transition-all duration-300 shadow-soft">
                       <svg
-                        className="h-7 w-7 text-white"
+                        className="h-6 w-6 sm:h-7 sm:w-7 text-white"
                         fill="none"
                         viewBox="0 0 24 24"
                         strokeWidth="2"
@@ -216,7 +216,7 @@ const Home = () => {
                     </div>
                     Universal Translation
                   </dt>
-                  <dd className="flex flex-auto flex-col text-base leading-7 text-neutral-600">
+                  <dd className="flex flex-auto flex-col text-sm sm:text-base leading-6 sm:leading-7 text-neutral-600">
                     <p className="flex-auto">
                       Break language barriers with instant translation in 100+
                       languages, enabling seamless global collaboration and
@@ -230,31 +230,31 @@ const Home = () => {
         </div>
 
         {/* Footer Section */}
-        <footer className="bg-neutral-900 text-white py-8">
-          <div className=" px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 lg:gap-8">
+        <footer className="bg-neutral-900 text-white py-6 sm:py-8">
+          <div className="px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-6 lg:gap-8">
               {/* Brand Section */}
-              <div className="col-span-1 md:col-span-2">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-10 h-10 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-xl flex items-center justify-center shadow-soft">
-                    <span className="text-white font-bold text-lg font-display">
+              <div className="col-span-1 sm:col-span-2">
+                <div className="flex items-center space-x-2.5 sm:space-x-3 mb-3 sm:mb-4">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-lg sm:rounded-xl flex items-center justify-center shadow-soft">
+                    <span className="text-white font-bold text-base sm:text-lg font-display">
                       W
                     </span>
                   </div>
                   <div>
-                    <span className="text-xl font-bold text-white font-display">
+                    <span className="text-lg sm:text-xl font-bold text-white font-display">
                       WWC
                     </span>
-                    <div className="text-xs text-wwc-400 font-medium -mt-1">
+                    <div className="text-[10px] sm:text-xs text-wwc-400 font-medium -mt-0.5 sm:-mt-1">
                       Video Conferencing
                     </div>
                   </div>
                 </div>
-                <p className="text-neutral-300 text-base leading-relaxed mb-3 max-w-md">
+                <p className="text-neutral-300 text-sm sm:text-base leading-relaxed mb-2.5 sm:mb-3 max-w-md">
                   Connect globally, communicate effortlessly with the world's
                   most advanced video conferencing platform.
                 </p>
-                <p className="text-xs text-neutral-400">
+                <p className="text-[10px] sm:text-xs text-neutral-400">
                   Developed and maintained by{" "}
                   <span className="text-wwc-400 font-semibold">harborleaf</span>
                 </p>
@@ -262,22 +262,21 @@ const Home = () => {
 
               {/* Quick Links */}
               <div>
-                <h3 className="text-base font-semibold text-white mb-3">
+                <h3 className="text-sm sm:text-base font-semibold text-white mb-2.5 sm:mb-3">
                   Quick Links
                 </h3>
-                <ul className="space-y-2">
+                <ul className="space-y-1.5 sm:space-y-2">
                   <li>
                     <Link
                       to="/signup"
-                      className="text-sm text-neutral-300 hover:text-wwc-400 transition-colors duration-200"
-                    >
+                      className="text-xs sm:text-sm text-neutral-300 hover:text-wwc-400 transition-colors duration-200">
                       Get Started
                     </Link>
                   </li>
                   <li>
                     <Link
                       to="/login"
-                      className="text-sm text-neutral-300 hover:text-wwc-400 transition-colors duration-200"
+                      className="text-xs sm:text-sm text-neutral-300 hover:text-wwc-400 transition-colors duration-200"
                     >
                       Sign In
                     </Link>
@@ -285,7 +284,7 @@ const Home = () => {
                   <li>
                     <a
                       href="#features"
-                      className="text-sm text-neutral-300 hover:text-wwc-400 transition-colors duration-200"
+                      className="text-xs sm:text-sm text-neutral-300 hover:text-wwc-400 transition-colors duration-200"
                     >
                       Features
                     </a>
@@ -293,7 +292,7 @@ const Home = () => {
                   <li>
                     <a
                       href="#about"
-                      className="text-sm text-neutral-300 hover:text-wwc-400 transition-colors duration-200"
+                      className="text-xs sm:text-sm text-neutral-300 hover:text-wwc-400 transition-colors duration-200"
                     >
                       About
                     </a>
@@ -303,19 +302,19 @@ const Home = () => {
 
               {/* Social Media & Contact */}
               <div>
-                <h3 className="text-base font-semibold text-white mb-3">
+                <h3 className="text-sm sm:text-base font-semibold text-white mb-2.5 sm:mb-3">
                   Connect With Us
                 </h3>
-                <div className="flex space-x-3 mb-3">
+                <div className="flex space-x-2.5 sm:space-x-3 mb-2.5 sm:mb-3">
                   {/* Twitter */}
                   <a
                     href="https://twitter.com/harborleaf"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-8 h-8 bg-neutral-800 hover:bg-wwc-600 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
+                    className="w-7 h-7 sm:w-8 sm:h-8 bg-neutral-800 hover:bg-wwc-600 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
                   >
                     <svg
-                      className="w-4 h-4"
+                      className="w-3.5 h-3.5 sm:w-4 sm:h-4"
                       fill="currentColor"
                       viewBox="0 0 24 24"
                     >
@@ -328,10 +327,10 @@ const Home = () => {
                     href="https://linkedin.com/company/harborleaf"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-8 h-8 bg-neutral-800 hover:bg-wwc-600 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
+                    className="w-7 h-7 sm:w-8 sm:h-8 bg-neutral-800 hover:bg-wwc-600 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
                   >
                     <svg
-                      className="w-4 h-4"
+                      className="w-3.5 h-3.5 sm:w-4 sm:h-4"
                       fill="currentColor"
                       viewBox="0 0 24 24"
                     >
@@ -344,10 +343,10 @@ const Home = () => {
                     href="https://github.com/harborleaf"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-8 h-8 bg-neutral-800 hover:bg-wwc-600 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
+                    className="w-7 h-7 sm:w-8 sm:h-8 bg-neutral-800 hover:bg-wwc-600 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
                   >
                     <svg
-                      className="w-4 h-4"
+                      className="w-3.5 h-3.5 sm:w-4 sm:h-4"
                       fill="currentColor"
                       viewBox="0 0 24 24"
                     >
@@ -360,10 +359,10 @@ const Home = () => {
                     href="https://instagram.com/harborleaf"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-8 h-8 bg-neutral-800 hover:bg-wwc-600 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
+                    className="w-7 h-7 sm:w-8 sm:h-8 bg-neutral-800 hover:bg-wwc-600 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
                   >
                     <svg
-                      className="w-4 h-4"
+                      className="w-3.5 h-3.5 sm:w-4 sm:h-4"
                       fill="currentColor"
                       viewBox="0 0 24 24"
                     >
@@ -371,19 +370,19 @@ const Home = () => {
                     </svg>
                   </a>
                 </div>
-                <p className="text-xs text-neutral-400">
+                <p className="text-[10px] sm:text-xs text-neutral-400">
                   Email: contact@harborleaf.com
                 </p>
               </div>
             </div>
 
             {/* Bottom Copyright Section */}
-            <div className="border-t border-neutral-800 mt-6 pt-4 flex flex-col md:flex-row justify-between items-center">
-              <div className="text-xs text-neutral-400 mb-2 md:mb-0">
+            <div className="border-t border-neutral-800 mt-5 sm:mt-6 pt-3.5 sm:pt-4 flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-0">
+              <div className="text-[10px] sm:text-xs text-neutral-400 text-center sm:text-left">
                 © {new Date().getFullYear()} WWC - World Wide Conferencing. All
                 rights reserved.
               </div>
-              <div className="text-xs text-neutral-400">
+              <div className="text-[10px] sm:text-xs text-neutral-400 text-center sm:text-right">
                 Crafted with ❤️ by{" "}
                 <a
                   href="https://harborleaf.com"

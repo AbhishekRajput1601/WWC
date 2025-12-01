@@ -653,20 +653,20 @@ const MeetingRoom = () => {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-wwc-50 via-white to-accent-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-wwc-50 via-white to-accent-50 flex items-center justify-center px-4">
         <div className="text-center animate-fade-in">
-          <div className="mx-auto w-20 h-20 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-3xl flex items-center justify-center shadow-hard mb-6">
+          <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-2xl sm:rounded-3xl flex items-center justify-center shadow-hard mb-4 sm:mb-6">
             <div className="animate-pulse-soft">
-              <span className="text-white font-bold text-2xl font-display">
+              <span className="text-white font-bold text-xl sm:text-2xl font-display">
                 W
               </span>
             </div>
           </div>
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wwc-500 mx-auto mb-4"></div>
-          <p className="text-neutral-900 font-semibold text-lg">
+          <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-wwc-500 mx-auto mb-3 sm:mb-4"></div>
+          <p className="text-neutral-900 font-semibold text-base sm:text-lg">
             Connecting to WWC Meeting...
           </p>
-          <p className="text-neutral-600 text-sm mt-1">
+          <p className="text-neutral-600 text-xs sm:text-sm mt-1 truncate max-w-[280px] sm:max-w-none">
             Meeting ID: {meetingId}
           </p>
         </div>
@@ -676,11 +676,11 @@ const MeetingRoom = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-neutral-900 via-neutral-800 to-error-950 flex items-center justify-center">
-        <div className="text-center bg-white/10 backdrop-blur-sm rounded-2xl p-8 max-w-md mx-4">
-          <div className="w-16 h-16 bg-error-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+      <div className="min-h-screen bg-gradient-to-br from-neutral-900 via-neutral-800 to-error-950 flex items-center justify-center px-4">
+        <div className="text-center bg-white/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-6 sm:p-8 max-w-md mx-4">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-error-500 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4">
             <svg
-              className="w-8 h-8 text-white"
+              className="w-6 h-6 sm:w-8 sm:h-8 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -693,13 +693,13 @@ const MeetingRoom = () => {
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-white mb-3">
+          <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">
             Connection Failed
           </h2>
-          <p className="text-neutral-300 mb-6">{error}</p>
+          <p className="text-neutral-300 mb-4 sm:mb-6 text-sm sm:text-base">{error}</p>
           <button
             onClick={() => navigate("/dashboard")}
-            className="bg-gradient-to-r from-wwc-600 to-wwc-700 text-white px-6 py-3 rounded-xl font-semibold hover:from-wwc-700 hover:to-wwc-800 transition-all duration-200 shadow-soft hover:shadow-medium"
+            className="bg-gradient-to-r from-wwc-600 to-wwc-700 text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold hover:from-wwc-700 hover:to-wwc-800 transition-all duration-200 shadow-soft hover:shadow-medium w-full sm:w-auto"
           >
             Return to Dashboard
           </button>
@@ -710,15 +710,15 @@ const MeetingRoom = () => {
 
   if (meetingEnded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-wwc-50 via-white to-accent-50">
-        <div className="bg-white/90 rounded-2xl shadow-medium p-8 text-center">
-          <h2 className="text-2xl font-bold text-success-700 mb-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-wwc-50 via-white to-accent-50 px-4">
+        <div className="bg-white/90 rounded-xl sm:rounded-2xl shadow-medium p-6 sm:p-8 text-center max-w-md">
+          <h2 className="text-xl sm:text-2xl font-bold text-success-700 mb-3 sm:mb-4">
             Meeting Ended
           </h2>
-          <p className="text-neutral-700 mb-2">
+          <p className="text-neutral-700 mb-1.5 sm:mb-2 text-sm sm:text-base">
             The meeting has been successfully ended.
           </p>
-          <p className="text-neutral-500 text-sm">
+          <p className="text-neutral-500 text-xs sm:text-sm">
             Redirecting to dashboard...
           </p>
         </div>
@@ -728,8 +728,8 @@ const MeetingRoom = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-wwc-50 via-white to-accent-50 overflow-hidden relative">
-      <div className="flex-1 flex mt-6">
-        <div className="flex w-full h-[calc(100vh-72px)]">
+      <div className="flex-1 flex mt-3 sm:mt-4 md:mt-6">
+        <div className="flex w-full h-[calc(100vh-60px)] sm:h-[calc(100vh-68px)] md:h-[calc(100vh-72px)]">
           <MeetingStage
             mediaStream={mediaStream}
             participants={participants}

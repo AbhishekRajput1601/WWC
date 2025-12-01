@@ -23,23 +23,35 @@ def transcribe():
         language = request.form.get('language', None)
         translate = request.form.get('translate', 'false').lower() == 'true'
 
-        temp_path = 'temp_audio.wav'
-        audio_file.save(temp_path)
+        import tempfile
 
+        # Use a NamedTemporaryFile to ensure a valid path and safe cleanup
+        fd, temp_path = tempfile.mkstemp(suffix='.wav', prefix='whisper_tmp_')
+        os.close(fd)
         try:
-            segments, info = model.transcribe(
-                temp_path,
-                language=language,
-                task='translate' if translate else 'transcribe'
-            )
-        except Exception as e:
-            import traceback
-            print('Whisper error:', e)
-            traceback.print_exc()
-            os.remove(temp_path)
-            return jsonify({'success': False, 'message': 'Transcription failed', 'error': str(e)}), 500
+            audio_file.save(temp_path)
 
-        os.remove(temp_path)
+            # Confirm file saved
+            if not os.path.exists(temp_path):
+                raise FileNotFoundError(f"Saved temp file not found: {temp_path}")
+
+            try:
+                segments, info = model.transcribe(
+                    temp_path,
+                    language=language,
+                    task='translate' if translate else 'transcribe'
+                )
+            except Exception as e:
+                import traceback
+                print('Whisper error:', e)
+                traceback.print_exc()
+                return jsonify({'success': False, 'message': 'Transcription failed', 'error': str(e)}), 500
+        finally:
+            try:
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+            except Exception:
+                pass
 
         captions = []
         for segment in segments:

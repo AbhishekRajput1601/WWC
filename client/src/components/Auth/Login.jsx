@@ -65,21 +65,21 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-start justify-center bg-gradient-to-br from-wwc-50 via-white to-accent-50 pt-8 pb-6 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-6">
+    <div className="min-h-[calc(100vh-4rem)] flex items-start justify-center bg-gradient-to-br from-wwc-50 via-white to-accent-50 pt-4 sm:pt-8 pb-4 sm:pb-6 px-3 xs:px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-4 sm:space-y-6">
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-2xl flex items-center justify-center shadow-medium">
-            <span className="text-white font-bold text-2xl font-display">
+          <div className="mx-auto h-12 w-12 sm:h-16 sm:w-16 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-medium">
+            <span className="text-white font-bold text-xl sm:text-2xl font-display">
               W
             </span>
           </div>
-          <h2 className="mt-4 text-center text-2xl font-bold text-neutral-900 font-display">
+          <h2 className="mt-3 sm:mt-4 text-center text-xl sm:text-2xl font-bold text-neutral-900 font-display">
             Welcome to WWC
           </h2>
-          <p className="mt-1 text-center text-sm text-neutral-600">
+          <p className="mt-1 sm:mt-2 text-center text-xs sm:text-sm text-neutral-600 px-2">
             Sign in to join world-class video conferences
           </p>
-          <p className="mt-1 text-center text-sm text-neutral-500">
+          <p className="mt-1 sm:mt-2 text-center text-xs sm:text-sm text-neutral-500 px-2">
             Don't have an account?{" "}
             <Link
               to="/signup"
@@ -89,14 +89,14 @@ const Login = () => {
             </Link>
           </p>
         </div>
-        <div className="bg-white shadow-medium rounded-2xl px-6 py-6 mt-4">
-          <form className="space-y-4" onSubmit={handleSubmit}>
+        <div className="bg-white shadow-medium rounded-xl sm:rounded-2xl px-4 sm:px-6 py-4 sm:py-6 mt-3 sm:mt-4">
+          <form className="space-y-3 sm:space-y-4" onSubmit={handleSubmit}>
             {error && (
-              <div className="bg-error-50 border border-error-200 text-error-700 px-4 py-3 rounded-lg animate-slide-in-up">
+              <div className="bg-error-50 border border-error-200 text-error-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg animate-slide-in-up">
                 <div className="flex">
                   <div className="flex-shrink-0">
                     <svg
-                      className="h-5 w-5 text-error-400"
+                      className="h-4 w-4 sm:h-5 sm:w-5 text-error-400"
                       viewBox="0 0 20 20"
                       fill="currentColor"
                     >
@@ -107,18 +107,18 @@ const Login = () => {
                       />
                     </svg>
                   </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-medium">{error}</p>
+                  <div className="ml-2 sm:ml-3">
+                    <p className="text-xs sm:text-sm font-medium">{error}</p>
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
                 <label
                   htmlFor="email"
-                  className="block text-sm font-semibold text-neutral-700 mb-2"
+                  className="block text-xs sm:text-sm font-semibold text-neutral-700 mb-1.5 sm:mb-2"
                 >
                   Email Address
                 </label>
@@ -128,7 +128,7 @@ const Login = () => {
                   type="email"
                   autoComplete="email"
                   required
-                  className="block w-full px-4 py-3 border border-neutral-200 rounded-xl text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-wwc-500 focus:border-wwc-500 transition-all duration-200 bg-neutral-50 focus:bg-white"
+                  className="block w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-neutral-200 rounded-lg sm:rounded-xl text-sm sm:text-base text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-wwc-500 focus:border-wwc-500 transition-all duration-200 bg-neutral-50 focus:bg-white"
                   placeholder="Enter your email address"
                   value={formData.email}
                   onChange={handleChange}
@@ -138,7 +138,7 @@ const Login = () => {
               <div>
                 <label
                   htmlFor="password"
-                  className="block text-sm font-semibold text-neutral-700 mb-2"
+                  className="block text-xs sm:text-sm font-semibold text-neutral-700 mb-1.5 sm:mb-2"
                 >
                   Password
                 </label>
@@ -148,7 +148,7 @@ const Login = () => {
                   type="password"
                   autoComplete="current-password"
                   required
-                  className="block w-full px-4 py-3 border border-neutral-200 rounded-xl text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-wwc-500 focus:border-wwc-500 transition-all duration-200 bg-neutral-50 focus:bg-white"
+                  className="block w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-neutral-200 rounded-lg sm:rounded-xl text-sm sm:text-base text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-wwc-500 focus:border-wwc-500 transition-all duration-200 bg-neutral-50 focus:bg-white"
                   placeholder="Enter your password"
                   value={formData.password}
                   onChange={handleChange}
@@ -156,16 +156,16 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="pt-2">
+            <div className="pt-1 sm:pt-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full flex justify-center py-3 px-4 border-2 border-black text-sm font-semibold rounded-xl text-black bg-white hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-soft hover:shadow-medium transform hover:-translate-y-0.5"
+                className="group relative w-full flex justify-center py-2.5 sm:py-3 px-4 border-2 border-black text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl text-black bg-white hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-soft hover:shadow-medium transform hover:-translate-y-0.5 active:translate-y-0"
               >
                 {loading ? (
                   <div className="flex items-center">
                     <svg
-                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-black"
+                      className="animate-spin -ml-1 mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 text-black"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
@@ -184,7 +184,7 @@ const Login = () => {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       ></path>
                     </svg>
-                    Signing you in...
+                    <span className="text-xs sm:text-sm">Signing you in...</span>
                   </div>
                 ) : (
                   "Sign In to WWC"

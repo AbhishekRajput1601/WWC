@@ -252,18 +252,18 @@ const UserProfile = () => {
   if (error && !user) return <div className="text-red-500">{error}</div>;
 
   return (
-    <div className="max-w-5xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold">Your Profile</h2>
+    <div className="max-w-5xl mx-auto mt-4 sm:mt-6 md:mt-10 p-3 sm:p-4 md:p-6 bg-white rounded-lg shadow-lg">
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-semibold">Your Profile</h2>
       </div>
 
-      <div className="mt-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div className="bg-gradient-to-br from-wwc-500 to-wwc-600 rounded-2xl shadow-medium p-6 text-white">
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-white/20 rounded-xl p-3">
+      <div className="mt-4 sm:mt-6 md:mt-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6">
+          <div className="bg-gradient-to-br from-wwc-500 to-wwc-600 rounded-xl sm:rounded-2xl shadow-medium p-4 sm:p-5 md:p-6 text-white">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="bg-white/20 rounded-lg sm:rounded-xl p-2 sm:p-3">
                 <svg
-                  className="w-6 h-6"
+                  className="w-5 h-5 sm:w-6 sm:h-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -276,19 +276,19 @@ const UserProfile = () => {
                   />
                 </svg>
               </div>
-              <span className="text-3xl font-bold">{stats.totalMeetings}</span>
+              <span className="text-2xl sm:text-3xl font-bold">{stats.totalMeetings}</span>
             </div>
-            <h3 className="text-sm font-medium opacity-90">Total Meetings</h3>
-            <p className="text-xs opacity-75 mt-1">
+            <h3 className="text-xs sm:text-sm font-medium opacity-90">Total Meetings</h3>
+            <p className="text-[10px] sm:text-xs opacity-75 mt-1">
               Meetings you hosted or joined
             </p>
           </div>
 
-          <div className="bg-gradient-to-br from-accent-500 to-accent-600 rounded-2xl shadow-medium p-6 text-white">
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-white/20 rounded-xl p-3">
+          <div className="bg-gradient-to-br from-accent-500 to-accent-600 rounded-xl sm:rounded-2xl shadow-medium p-4 sm:p-5 md:p-6 text-white">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="bg-white/20 rounded-lg sm:rounded-xl p-2 sm:p-3">
                 <svg
-                  className="w-6 h-6"
+                  className="w-5 h-5 sm:w-6 sm:h-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -301,19 +301,19 @@ const UserProfile = () => {
                   />
                 </svg>
               </div>
-              <span className="text-3xl font-bold">{stats.joinedMeetings}</span>
+              <span className="text-2xl sm:text-3xl font-bold">{stats.joinedMeetings}</span>
             </div>
-            <h3 className="text-sm font-medium opacity-90">Joined Meetings</h3>
-            <p className="text-xs opacity-75 mt-1">
+            <h3 className="text-xs sm:text-sm font-medium opacity-90">Joined Meetings</h3>
+            <p className="text-[10px] sm:text-xs opacity-75 mt-1">
               Meetings you joined as a participant
             </p>
           </div>
 
-          <div className="bg-gradient-to-br from-success-500 to-success-600 rounded-2xl shadow-medium p-6 text-white">
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-white/20 rounded-xl p-3">
+          <div className="bg-gradient-to-br from-success-500 to-success-600 rounded-xl sm:rounded-2xl shadow-medium p-4 sm:p-5 md:p-6 text-white sm:col-span-2 lg:col-span-1">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="bg-white/20 rounded-lg sm:rounded-xl p-2 sm:p-3">
                 <svg
-                  className="w-6 h-6"
+                  className="w-5 h-5 sm:w-6 sm:h-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -326,26 +326,26 @@ const UserProfile = () => {
                   />
                 </svg>
               </div>
-              <span className="text-3xl font-bold">{stats.hostedMeetings}</span>
+              <span className="text-2xl sm:text-3xl font-bold">{stats.hostedMeetings}</span>
             </div>
-            <h3 className="text-sm font-medium opacity-90">Hosted Meetings</h3>
-            <p className="text-xs opacity-75 mt-1">
+            <h3 className="text-xs sm:text-sm font-medium opacity-90">Hosted Meetings</h3>
+            <p className="text-[10px] sm:text-xs opacity-75 mt-1">
               Meetings where you were the host
             </p>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-medium border border-neutral-100 p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-neutral-900">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-medium border border-neutral-100 p-3 sm:p-4 md:p-6 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
+            <h2 className="text-lg sm:text-xl font-bold text-neutral-900">
               Your Meeting Activity
             </h2>
             <div className="flex items-center space-x-2">
-              <label className="text-sm text-neutral-600">Range:</label>
+              <label className="text-xs sm:text-sm text-neutral-600">Range:</label>
               <select
                 value={activityRange}
                 onChange={(e) => setActivityRange(Number(e.target.value))}
-                className="border rounded px-2 py-1 text-sm bg-white"
+                className="border rounded px-2 py-1 text-xs sm:text-sm bg-white"
               >
                 <option value={7}>Last 7 days</option>
                 <option value={30}>1 month</option>
@@ -353,7 +353,7 @@ const UserProfile = () => {
               </select>
             </div>
           </div>
-          <div className="h-40 flex items-end justify-between px-4 overflow-x-auto">
+          <div className="h-32 sm:h-40 flex items-end justify-between px-1 sm:px-2 md:px-4 overflow-x-auto">
             {stats.activityDays.map((day, index) => {
               const maxCount = Math.max(
                 ...stats.activityDays.map((d) => d.count),
@@ -363,14 +363,14 @@ const UserProfile = () => {
               return (
                 <div
                   key={index}
-                  className="flex flex-col items-center flex-1 mx-1 min-w-[48px]"
+                  className="flex flex-col items-center flex-1 mx-0.5 sm:mx-1 min-w-[32px] sm:min-w-[48px]"
                 >
                   <div
                     className="w-full flex flex-col items-center justify-end"
-                    style={{ height: "160px" }}
+                    style={{ height: "128px", maxHeight: "128px" }}
                   >
                     {day.count > 0 && (
-                      <span className="text-xs font-semibold text-wwc-700 mb-1">
+                      <span className="text-[10px] sm:text-xs font-semibold text-wwc-700 mb-1">
                         {day.count}
                       </span>
                     )}
@@ -378,12 +378,12 @@ const UserProfile = () => {
                       className="w-full bg-gradient-to-t from-wwc-500 to-wwc-400 rounded-t-lg transition-all duration-500 hover:from-wwc-600 hover:to-wwc-500 cursor-pointer"
                       style={{
                         height: `${heightPercent}%`,
-                        minHeight: day.count > 0 ? "20px" : "0px",
+                        minHeight: day.count > 0 ? "16px" : "0px",
                       }}
                       title={`${day.count} meetings on ${day.date}`}
                     ></div>
                   </div>
-                  <span className="text-xs text-neutral-600 mt-2 font-medium">
+                  <span className="text-[9px] sm:text-xs text-neutral-600 mt-1 sm:mt-2 font-medium text-center break-words">
                     {day.date}
                   </span>
                 </div>
@@ -392,71 +392,71 @@ const UserProfile = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-medium border border-neutral-100 p-6">
-          <h2 className="text-2xl font-bold text-wwc-700 mb-4">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-medium border border-neutral-100 p-3 sm:p-4 md:p-6">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-wwc-700 mb-3 sm:mb-4">
             Your Meetings
           </h2>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto -mx-3 sm:-mx-4 md:mx-0">
             <table className="min-w-full text-left">
               <thead>
                 <tr className="bg-neutral-100">
-                  <th className="py-2 px-4 font-semibold">Title</th>
-                  <th className="py-2 px-4 font-semibold">Recorded Video</th>
-                  <th className="py-2 px-4 font-semibold">Recorded Caption</th>
-                  <th className="py-2 px-4 font-semibold">Participants</th>
-                  <th className="py-2 px-4 font-semibold">Created At</th>
+                  <th className="py-2 px-2 sm:px-3 md:px-4 font-semibold text-xs sm:text-sm">Title</th>
+                  <th className="py-2 px-2 sm:px-3 md:px-4 font-semibold text-xs sm:text-sm">Video</th>
+                  <th className="py-2 px-2 sm:px-3 md:px-4 font-semibold text-xs sm:text-sm">Caption</th>
+                  <th className="py-2 px-2 sm:px-3 md:px-4 font-semibold text-xs sm:text-sm">Participants</th>
+                  <th className="py-2 px-2 sm:px-3 md:px-4 font-semibold text-xs sm:text-sm whitespace-nowrap">Created At</th>
                 </tr>
               </thead>
               <tbody>
                 {meetings.map((m) => (
                   <tr key={m._id} className="border-b">
-                    <td className="py-2 px-4">{m.title}</td>
-                    <td className="py-2 px-4">
+                    <td className="py-2 px-2 sm:px-3 md:px-4 text-xs sm:text-sm">{m.title}</td>
+                    <td className="py-2 px-2 sm:px-3 md:px-4">
                       {(m.recordings && m.recordings.length > 0) ||
                       (m.recording && m.recording.public_id) ? (
                         <button
                           onClick={() => openRecordings(m)}
-                          className="bg-wwc-600 hover:bg-wwc-700 text-white font-medium py-1 px-3 rounded-md text-sm transition-colors"
+                          className="bg-wwc-600 hover:bg-wwc-700 text-white font-medium py-1 px-2 sm:px-3 rounded-md text-xs sm:text-sm transition-colors whitespace-nowrap"
                         >
                           Play
                         </button>
                       ) : m.recording && m.recording.status === "processing" ? (
-                        <span className="text-sm text-neutral-500">
+                        <span className="text-xs sm:text-sm text-neutral-500">
                           Processing
                         </span>
                       ) : (
                         <button
                           onClick={() => openRecordings(m)}
-                          className="bg-neutral-100 hover:bg-neutral-200 text-neutral-600 font-medium py-1 px-3 rounded-md text-sm border"
+                          className="bg-neutral-100 hover:bg-neutral-200 text-neutral-600 font-medium py-1 px-2 sm:px-3 rounded-md text-xs sm:text-sm border whitespace-nowrap"
                         >
                           Play
                         </button>
                       )}
                     </td>
-                    <td className="py-2 px-4">
+                    <td className="py-2 px-2 sm:px-3 md:px-4">
                       {m.captionsTextPath ? (
                         <button
                           onClick={() => openCaptions(m)}
-                          className="bg-wwc-600 hover:bg-wwc-700 text-white font-medium py-1 px-3 rounded-md text-sm transition-colors"
+                          className="bg-wwc-600 hover:bg-wwc-700 text-white font-medium py-1 px-2 sm:px-3 rounded-md text-xs sm:text-sm transition-colors whitespace-nowrap"
                         >
                           View
                         </button>
                       ) : (
-                        <span className="text-sm text-neutral-400">—</span>
+                        <span className="text-xs sm:text-sm text-neutral-400">—</span>
                       )}
                     </td>
-                    <td className="py-2 px-4 relative">
+                    <td className="py-2 px-2 sm:px-3 md:px-4 relative">
                       <div className="inline-block">
                         <button
                           onClick={(e) =>
                             toggleParticipants(e, m._id, m.participants)
                           }
-                          className="flex items-center space-x-2 px-3 py-1 bg-neutral-100 hover:bg-neutral-200 rounded-md text-sm border"
+                          className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 bg-neutral-100 hover:bg-neutral-200 rounded-md text-xs sm:text-sm border whitespace-nowrap"
                         >
                           <span>{(m.participants || []).length}</span>
-                          <span className="text-neutral-600">Participants</span>
+                          <span className="text-neutral-600 hidden sm:inline">Participants</span>
                           <svg
-                            className="w-4 h-4 text-neutral-500"
+                            className="w-3 h-3 sm:w-4 sm:h-4 text-neutral-500"
                             viewBox="0 0 20 20"
                             fill="currentColor"
                           >
@@ -515,7 +515,7 @@ const UserProfile = () => {
                           document.body
                         )}
                     </td>
-                    <td className="py-2 px-4">
+                    <td className="py-2 px-2 sm:px-3 md:px-4 text-xs sm:text-sm whitespace-nowrap">
                       {new Date(m.createdAt).toLocaleString()}
                     </td>
                   </tr>
@@ -527,12 +527,12 @@ const UserProfile = () => {
 
         {/* Recordings modal */}
         {recordingsModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
-              <div className="flex items-center justify-between p-4 border-b">
-                <div>
-                  <h3 className="text-lg font-semibold">Recordings</h3>
-                  <p className="text-xs text-neutral-500">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-3 sm:px-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] flex flex-col">
+              <div className="flex items-center justify-between p-3 sm:p-4 border-b">
+                <div className="flex-1 min-w-0 pr-2">
+                  <h3 className="text-base sm:text-lg font-semibold truncate">Recordings</h3>
+                  <p className="text-xs text-neutral-500 truncate">
                     {currentMeetingForRecordings?.title ||
                       currentMeetingForRecordings?.meetingId}
                   </p>
@@ -540,28 +540,28 @@ const UserProfile = () => {
                 <div>
                   <button
                     onClick={closeRecordings}
-                    className="text-neutral-500 hover:text-neutral-700"
+                    className="text-neutral-500 hover:text-neutral-700 text-xl sm:text-2xl"
                   >
                     ✕
                   </button>
                 </div>
               </div>
-              <div className="p-4 space-y-3">
+              <div className="p-3 sm:p-4 space-y-3 overflow-y-auto flex-1">
                 {recordingsLoading ? (
-                  <div className="text-center text-sm text-neutral-500">
+                  <div className="text-center text-xs sm:text-sm text-neutral-500">
                     Loading recordings…
                   </div>
                 ) : recordingsError ? (
-                  <div className="text-center text-sm text-error-600">
+                  <div className="text-center text-xs sm:text-sm text-error-600">
                     {recordingsError}
                   </div>
                 ) : recordingsList.length === 0 ? (
-                  <div className="text-center text-sm text-neutral-500">
+                  <div className="text-center text-xs sm:text-sm text-neutral-500">
                     No recordings found for this meeting.
                   </div>
                 ) : (
-                  <div className="flex gap-4">
-                    <div className="w-1/2 overflow-auto max-h-56">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                    <div className="w-full sm:w-1/2 overflow-auto max-h-48 sm:max-h-56">
                       <ul className="space-y-2">
                         {recordingsList.map((r) => (
                           <li
@@ -574,35 +574,35 @@ const UserProfile = () => {
                             }`}
                             onClick={() => setSelectedRecording(r)}
                           >
-                            <div className="text-sm font-medium text-neutral-900">
+                            <div className="text-xs sm:text-sm font-medium text-neutral-900">
                               {new Date(r.uploadedAt).toLocaleString()}
                             </div>
-                            <div className="text-xs text-neutral-500">
+                            <div className="text-[10px] sm:text-xs text-neutral-500">
                               {r.bytes
                                 ? `${(r.bytes / 1024 / 1024).toFixed(2)} MB`
                                 : "—"}{" "}
                               •{" "}
                               {r.duration ? `${Math.round(r.duration)}s` : "—"}
                             </div>
-                            <div className="text-xs text-neutral-400">
+                            <div className="text-[10px] sm:text-xs text-neutral-400">
                               {r.status}
                             </div>
                           </li>
                         ))}
                       </ul>
                     </div>
-                    <div className="w-1/2">
+                    <div className="w-full sm:w-1/2">
                       {selectedRecording ? (
                         <div>
                           <video
-                            className="w-full h-40 bg-black rounded"
+                            className="w-full h-32 sm:h-40 bg-black rounded"
                             controls
                             src={
                               selectedRecording.url_high ||
                               selectedRecording.url_low
                             }
                           />
-                          <div className="mt-2 flex justify-between items-center text-xs text-neutral-600">
+                          <div className="mt-2 flex justify-between items-center text-[10px] sm:text-xs text-neutral-600">
                             <div>
                               {selectedRecording.duration
                                 ? `${Math.round(selectedRecording.duration)}s`
@@ -620,7 +620,7 @@ const UserProfile = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="text-sm text-neutral-500">
+                        <div className="text-xs sm:text-sm text-neutral-500">
                           Select a recording to preview
                         </div>
                       )}
@@ -628,9 +628,9 @@ const UserProfile = () => {
                   </div>
                 )}
               </div>
-              <div className="p-3 border-t flex justify-end">
+              <div className="p-2 sm:p-3 border-t flex justify-end">
                 <a
-                  className={`inline-flex items-center text-sm font-medium px-3 py-1 rounded ${
+                  className={`inline-flex items-center text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 rounded ${
                     selectedRecording
                       ? "bg-wwc-600 text-white hover:bg-wwc-700"
                       : "bg-neutral-100 text-neutral-600 cursor-not-allowed"
@@ -654,32 +654,32 @@ const UserProfile = () => {
         )}
 
         {captionsModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
-              <div className="flex items-center justify-between p-4 border-b">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-3 sm:px-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] sm:max-h-[80vh] overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between p-3 sm:p-4 border-b">
                 <div>
-                  <h3 className="text-lg font-semibold">Captions</h3>
+                  <h3 className="text-base sm:text-lg font-semibold">Captions</h3>
                 </div>
                 <div>
                   <button
                     onClick={() => setCaptionsModalOpen(false)}
-                    className="text-neutral-500 hover:text-neutral-700"
+                    className="text-neutral-500 hover:text-neutral-700 text-xl sm:text-2xl"
                   >
                     ✕
                   </button>
                 </div>
               </div>
-              <div className="p-4 overflow-auto" style={{ maxHeight: "64vh" }}>
-                <pre className="whitespace-pre-wrap text-sm text-neutral-800">
+              <div className="p-3 sm:p-4 overflow-auto flex-1">
+                <pre className="whitespace-pre-wrap text-xs sm:text-sm text-neutral-800">
                   {captionsModalContent}
                 </pre>
               </div>
-              <div className="p-3 border-t flex justify-end">
+              <div className="p-2 sm:p-3 border-t flex justify-end gap-2">
                 <button
                   onClick={() => {
                     navigator.clipboard?.writeText(captionsModalContent || "");
                   }}
-                  className="mr-2 text-sm px-3 py-1 rounded bg-neutral-100"
+                  className="text-xs sm:text-sm px-2 sm:px-3 py-1 rounded bg-neutral-100"
                 >
                   Copy
                 </button>
@@ -689,7 +689,7 @@ const UserProfile = () => {
                     encodeURIComponent(captionsModalContent || "")
                   }
                   download={`captions-${Date.now()}.txt`}
-                  className="text-sm px-3 py-1 rounded bg-wwc-600 text-white"
+                  className="text-xs sm:text-sm px-2 sm:px-3 py-1 rounded bg-wwc-600 text-white"
                 >
                   Download
                 </a>
@@ -699,33 +699,33 @@ const UserProfile = () => {
         )}
       </div>
 
-      {error && <div className="text-red-600 mb-4">{error}</div>}
-      {success && <div className="text-green-600 mb-4">{success}</div>}
+      {error && <div className="text-red-600 mb-3 sm:mb-4 text-xs sm:text-sm">{error}</div>}
+      {success && <div className="text-green-600 mb-3 sm:mb-4 text-xs sm:text-sm">{success}</div>}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
-        <div className="col-span-1 flex flex-col items-center p-4 border rounded-lg">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mt-6 sm:mt-8 md:mt-10">
+        <div className="col-span-1 flex flex-col items-center p-3 sm:p-4 border rounded-lg">
           {avatarPreview ? (
             <img
               src={avatarPreview}
               alt="avatar"
-              className="h-28 w-28 rounded-full object-cover mb-3"
+              className="h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28 rounded-full object-cover mb-2 sm:mb-3"
             />
           ) : (
-            <div className="h-28 w-28 rounded-full bg-gray-200 flex items-center justify-center text-4xl font-bold text-gray-600 mb-3">
+            <div className="h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28 rounded-full bg-gray-200 flex items-center justify-center text-3xl sm:text-4xl font-bold text-gray-600 mb-2 sm:mb-3">
               {form.name ? form.name.charAt(0).toUpperCase() : "U"}
             </div>
           )}
           <div className="text-center">
-            <div className="font-medium">{form.name || "Unnamed"}</div>
-            <div className="text-sm text-gray-500">{form.email}</div>
+            <div className="font-medium text-sm sm:text-base">{form.name || "Unnamed"}</div>
+            <div className="text-xs sm:text-sm text-gray-500 break-all">{form.email}</div>
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-2 p-4 border rounded-lg">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="col-span-1 md:col-span-2 p-3 sm:p-4 border rounded-lg">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700">
                   Full name
                 </label>
                 <input
@@ -733,13 +733,13 @@ const UserProfile = () => {
                   name="name"
                   value={form.name}
                   onChange={handleChange}
-                  className="mt-1 block w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  className="mt-1 block w-full border rounded-md px-2 sm:px-3 py-1.5 sm:py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700">
                   Email
                 </label>
                 <input
@@ -747,7 +747,7 @@ const UserProfile = () => {
                   name="email"
                   value={form.email}
                   onChange={handleChange}
-                  className="mt-1 block w-full border rounded-md px-3 py-2 bg-gray-50"
+                  className="mt-1 block w-full border rounded-md px-2 sm:px-3 py-1.5 sm:py-2 text-sm bg-gray-50"
                   required
                   disabled
                 />
@@ -755,7 +755,7 @@ const UserProfile = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700">
                 Profile Image URL
               </label>
               <input
@@ -764,27 +764,27 @@ const UserProfile = () => {
                 placeholder="https://..."
                 value={form.avatar || ""}
                 onChange={handleChange}
-                className="mt-1 block w-full border rounded-md px-3 py-2"
+                className="mt-1 block w-full border rounded-md px-2 sm:px-3 py-1.5 sm:py-2 text-sm"
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700">
                   Role
                 </label>
                 <input
                   type="text"
                   name="role"
                   value={form.role}
-                  className="mt-1 block w-full border rounded-md px-3 py-2 bg-gray-50"
+                  className="mt-1 block w-full border rounded-md px-2 sm:px-3 py-1.5 sm:py-2 text-sm bg-gray-50"
                   disabled={form.role === "admin"}
                   onChange={handleChange}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700">
                   Default language
                 </label>
                 <input
@@ -792,12 +792,12 @@ const UserProfile = () => {
                   name="preferences.defaultLanguage"
                   value={form.preferences?.defaultLanguage || ""}
                   onChange={handleChange}
-                  className="mt-1 block w-full border rounded-md px-3 py-2"
+                  className="mt-1 block w-full border rounded-md px-2 sm:px-3 py-1.5 sm:py-2 text-sm"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end space-x-3">
+            <div className="flex items-center justify-end space-x-2 sm:space-x-3">
               <button
                 type="button"
                 onClick={async () => {
@@ -820,14 +820,14 @@ const UserProfile = () => {
                     await loadUser();
                   }
                 }}
-                className="px-4 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs sm:text-sm"
               >
                 Reset
               </button>
 
               <button
                 type="submit"
-                className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 text-xs sm:text-sm"
                 disabled={loading}
               >
                 {loading ? "Updating..." : "Update"}
@@ -836,7 +836,7 @@ const UserProfile = () => {
           </form>
         </div>
       </div>
-    </div>
+</div>
   );
 };
 

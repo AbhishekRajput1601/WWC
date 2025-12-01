@@ -43,24 +43,27 @@ const VideoTile = ({ stream, label, isLocal = false, avatarChar = "U", participa
 
   const getCircleSize = () => {
     if (sizePx) return "";
-    if (participantCount <= 2) return "w-80 h-80";
-    if (participantCount <= 6) return "w-60 h-60";
-    if (participantCount <= 12) return "w-40 h-40";
-    return "w-28 h-28";
+    // Mobile gets consistent larger size for vertical scroll, desktop uses participant count
+    if (participantCount <= 2) return "w-48 h-48 sm:w-60 sm:h-60 md:w-80 md:h-80";
+    if (participantCount <= 6) return "w-40 h-40 sm:w-44 sm:h-44 md:w-60 md:h-60";
+    if (participantCount <= 12) return "w-36 h-36 sm:w-32 sm:h-32 md:w-40 md:h-40";
+    return "w-32 h-32 sm:w-24 sm:h-24 md:w-28 md:h-28";
   };
 
   const getAvatarSize = () => {
     if (sizePx) return "";
-    if (participantCount <= 2) return "text-4xl";
-    if (participantCount <= 6) return "text-3xl";
-    if (participantCount <= 12) return "text-2xl";
-    return "text-xl";
+    // Larger text on mobile for better visibility
+    if (participantCount <= 2) return "text-3xl sm:text-3xl md:text-4xl";
+    if (participantCount <= 6) return "text-2xl sm:text-2xl md:text-3xl";
+    if (participantCount <= 12) return "text-xl sm:text-xl md:text-2xl";
+    return "text-lg sm:text-lg md:text-xl";
   };
 
   const getLabelSize = () => {
-    if (participantCount <= 4) return "text-xs px-2 py-1";
-    if (participantCount <= 9) return "text-[10px] px-2 py-0.5";
-    return "text-[9px] px-1.5 py-0.5";
+    // Better readability on mobile
+    if (participantCount <= 4) return "text-xs sm:text-xs px-2 sm:px-2 py-1 sm:py-1";
+    if (participantCount <= 9) return "text-[11px] sm:text-[10px] px-2 sm:px-2 py-0.5";
+    return "text-[10px] sm:text-[9px] px-1.5 sm:px-1.5 py-0.5";
   };
 
   const circleStyle = sizePx ? { width: sizePx + "px", height: sizePx + "px" } : undefined;
@@ -70,8 +73,8 @@ const VideoTile = ({ stream, label, isLocal = false, avatarChar = "U", participa
   const ringClass = isHost ? "ring-2 ring-wwc-300/30" : "";
 
   return (
-    <div className="flex flex-col items-center gap-2" style={sizePx ? { width: sizePx } : undefined}>
-      <div className={`relative ${getCircleSize()} rounded-full border-4 ${borderClass} ${ringClass} shadow-xl overflow-hidden flex-shrink-0`} style={circleStyle}>
+    <div className="flex flex-col items-center gap-1 sm:gap-2" style={sizePx ? { width: sizePx } : undefined}>
+      <div className={`relative ${getCircleSize()} rounded-full border-2 sm:border-3 md:border-4 ${borderClass} ${ringClass} shadow-lg sm:shadow-xl overflow-hidden flex-shrink-0`} style={circleStyle}>
         <video ref={ref} autoPlay playsInline className="w-full h-full object-cover rounded-full" muted={isLocal} />
         {!hasVideo && (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -154,7 +157,6 @@ export default function MeetingStage({
   });
 
   const activeShareId = isScreenSharing ? "local" : remoteScreenSharerId;
-  // compute layout / tiles info (hooks like useMemo must run before any early return)
   const count = tiles.length;
 
   const getTilePixelSize = (count) => {
@@ -201,7 +203,7 @@ export default function MeetingStage({
     const cx = w / 2;
     const cy = h / 2;
 
-    const maxOuterRadius = Math.max(250, Math.min(w, h) / 2 - tilePx - 420);
+    const maxOuterRadius = Math.max(350, Math.min(w, h) / 2 - tilePx - 420);
     const minRadius = Math.max(tilePx * 4.0, 240);
 
     const perRing = 3;
@@ -230,22 +232,22 @@ export default function MeetingStage({
   if (activeShareId) {
     const shareStream = isScreenSharing ? screenStreamRef.current || mediaStream : remoteStreams[remoteScreenSharerId];
     return (
-      <div className="w-full h-full flex items-start justify-center overflow-hidden">
-        <div className="w-full max-w-[1200px] max-h-[85vh]" style={{ aspectRatio: "16 / 9" }}>
-          <div className="relative rounded-2xl border-4 border-white shadow-xl overflow-hidden w-full h-full">
+      <div className="w-full h-full flex flex-col sm:flex-row items-center justify-center overflow-hidden px-2 sm:px-4 py-2">
+        <div className="w-full h-full max-w-full sm:max-w-[1200px] max-h-full sm:max-h-[85vh]" style={{ aspectRatio: "16 / 9" }}>
+          <div className="relative rounded-lg sm:rounded-xl md:rounded-2xl border-2 sm:border-3 md:border-4 border-white shadow-lg sm:shadow-xl overflow-hidden w-full h-full">
             <video
               autoPlay
               playsInline
               muted={isScreenSharing}
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain bg-neutral-900"
               ref={(el) => {
                 if (!el) return;
                 el.srcObject = shareStream || null;
               }}
             />
 
-            <div className="absolute bottom-6 right-6 flex items-center space-x-3">
-              <div className="w-20 h-20 rounded-full border-4 border-white shadow-hard overflow-hidden bg-neutral-800 hidden sm:block">
+            <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 md:bottom-6 md:right-6 flex flex-col sm:flex-row items-end sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 md:space-x-3">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full border-2 sm:border-3 md:border-4 border-white shadow-medium sm:shadow-hard overflow-hidden bg-neutral-800">
                 <video
                   autoPlay
                   playsInline
@@ -258,7 +260,7 @@ export default function MeetingStage({
                   }}
                 />
               </div>
-              <div className="bg-white/90 px-3 py-1.5 rounded-xl text-sm font-semibold text-neutral-900 shadow">
+              <div className="bg-white/90 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold text-neutral-900 shadow truncate max-w-[120px] sm:max-w-[200px]">
                 {isScreenSharing ? user?.name || "You" : participants.find((p) => p.socketId === remoteScreenSharerId)?.userName || "Presenter"}
               </div>
             </div>
@@ -271,41 +273,76 @@ export default function MeetingStage({
   
 
   return (
-    <div ref={stageRef} className="flex-1 flex items-stretch justify-center bg-transparent h-full relative p-4 overflow-hidden">
-      {/* Host in exact center */}
-      <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", zIndex: 40 }}>
-        <div className="flex flex-col items-center">
+    <>
+      {/* Mobile View - Vertical Scrollable Layout */}
+      <div className="sm:hidden flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden p-2 space-y-3">
+        {/* Host Tile */}
+        <div className="flex flex-col items-center flex-shrink-0">
           <VideoTile
             stream={hostTile.stream}
             label={hostTile.label}
             isLocal={hostTile.isLocal}
             avatarChar={hostTile.avatarChar}
             participantCount={count}
-            sizePx={tilePx}
+            sizePx={null}
             isHost={true}
           />
-          <div className="mt-2 px-3 py-1 rounded-full bg-wwc-600 text-white text-xs font-semibold">Host</div>
+          <div className="mt-1 px-2 py-0.5 rounded-full bg-wwc-600 text-white text-[10px] font-semibold">Host</div>
         </div>
+
+        {/* Other Participants */}
+        {others.map((tile) => (
+          <div key={tile.key} className="flex flex-col items-center flex-shrink-0">
+            <VideoTile
+              stream={tile.stream}
+              label={tile.label}
+              isLocal={tile.isLocal}
+              avatarChar={tile.avatarChar}
+              participantCount={count}
+              sizePx={null}
+            />
+          </div>
+        ))}
       </div>
 
-      {positions.map((pos) => {
-        const tile = others.find((t) => t.key === pos.key);
-        if (!tile) return null;
-        return (
-          <div key={tile.key} style={{ position: "absolute", left: pos.left, top: pos.top, zIndex: 30 }}>
-            <VideoTile stream={tile.stream} label={tile.label} isLocal={tile.isLocal} avatarChar={tile.avatarChar} participantCount={count} sizePx={tilePx} />
+      {/* Desktop View - Circular Layout */}
+      <div ref={stageRef} className="hidden sm:flex flex-1 items-stretch justify-center bg-transparent h-full relative p-3 md:p-4 overflow-hidden">
+        {/* Host in exact center */}
+        <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", zIndex: 40 }}>
+          <div className="flex flex-col items-center">
+            <VideoTile
+              stream={hostTile.stream}
+              label={hostTile.label}
+              isLocal={hostTile.isLocal}
+              avatarChar={hostTile.avatarChar}
+              participantCount={count}
+              sizePx={tilePx}
+              isHost={true}
+            />
+            <div className="mt-2 px-3 py-1 rounded-full bg-wwc-600 text-white text-xs font-semibold">Host</div>
           </div>
-        );
-      })}
+        </div>
 
+        {positions.map((pos) => {
+          const tile = others.find((t) => t.key === pos.key);
+          if (!tile) return null;
+          return (
+            <div key={tile.key} style={{ position: "absolute", left: pos.left, top: pos.top, zIndex: 30 }}>
+              <VideoTile stream={tile.stream} label={tile.label} isLocal={tile.isLocal} avatarChar={tile.avatarChar} participantCount={count} sizePx={tilePx} />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Captions - Show on both mobile and desktop */}
       {showCaptions && (
-        <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 max-w-2xl z-50">
-          <div className="bg-white/95 backdrop-blur-md text-neutral-900 px-6 py-3 rounded-2xl border border-neutral-200 shadow-medium min-h-[48px] flex items-center justify-center">
-            <p className="text-center font-medium">{currentCaption ? currentCaption : <span className="text-neutral-400 italic">Listening...</span>}</p>
+        <div className="absolute bottom-2 sm:bottom-3 md:bottom-5 left-1/2 transform -translate-x-1/2 max-w-[90%] sm:max-w-xl md:max-w-2xl z-50 px-2">
+          <div className="bg-white/95 backdrop-blur-md text-neutral-900 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-xl sm:rounded-2xl border border-neutral-200 shadow-medium min-h-[40px] sm:min-h-[48px] flex items-center justify-center">
+            <p className="text-center font-medium text-xs sm:text-sm md:text-base">{currentCaption ? currentCaption : <span className="text-neutral-400 italic">Listening...</span>}</p>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 

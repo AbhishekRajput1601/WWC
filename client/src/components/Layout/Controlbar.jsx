@@ -51,14 +51,14 @@ const Controlbar = ({
     if (navigate) navigate("/dashboard");
   };
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-neutral-200 px-6 py-4 shadow-hard">
-      <div className="flex items-center justify-center space-x-4">
-        <div className="flex items-center space-x-2 mr-4">
+    <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-neutral-200 px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 shadow-hard">
+      <div className="flex items-center justify-center space-x-1 sm:space-x-2 md:space-x-4 overflow-x-auto">
+        <div className="flex items-center space-x-1 sm:space-x-2 mr-1 sm:mr-2 md:mr-4">
           <button
             onClick={() =>
               setActivePanel(activePanel === "users" ? null : "users")
             }
-            className={`px-3 py-2 rounded-lg font-medium transition-all duration-200 border-2 border-black text-sm flex items-center space-x-2 ${
+            className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-medium transition-all duration-200 border-2 border-black text-xs sm:text-sm flex items-center space-x-1 sm:space-x-2 ${
               activePanel === "users"
                 ? "bg-gray-200 text-black shadow-soft"
                 : "bg-white text-black hover:bg-gray-200"
@@ -66,7 +66,7 @@ const Controlbar = ({
             title="Participants"
           >
             <svg
-              className="w-4 h-4"
+              className="w-3 h-3 sm:w-4 sm:h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -78,14 +78,14 @@ const Controlbar = ({
                 d="M17 20h5v-2a3 3 0 00-5.196-2.121M9 6a3 3 0 106 0 3 3 0 00-6 0zM7 20a3 3 0 015.196-2.121M15 6a3 3 0 106 0 3 3 0 00-6 0z"
               />
             </svg>
-            <span>Participants</span>
+            <span className="hidden xs:inline">Participants</span>
           </button>
 
           <button
             onClick={() =>
               setActivePanel(activePanel === "chat" ? null : "chat")
             }
-            className={`px-3 py-2 rounded-lg font-medium transition-all duration-200 border-2 border-black text-sm flex items-center space-x-2 ${
+            className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-medium transition-all duration-200 border-2 border-black text-xs sm:text-sm flex items-center space-x-1 sm:space-x-2 ${
               activePanel === "chat"
                 ? "bg-gray-200 text-black shadow-soft"
                 : "bg-white text-black hover:bg-gray-200"
@@ -93,7 +93,7 @@ const Controlbar = ({
             title="Chat"
           >
             <svg
-              className="w-4 h-4"
+              className="w-3 h-3 sm:w-4 sm:h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -105,7 +105,7 @@ const Controlbar = ({
                 d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
               />
             </svg>
-            <span>Chat</span>
+            <span className="hidden xs:inline">Chat</span>
           </button>
         </div>
         <button
@@ -115,7 +115,7 @@ const Controlbar = ({
             e.stopPropagation();
             toggleMute();
           }}
-          className={`p-2 rounded-xl font-medium transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-black ${
+          className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl font-medium transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-black ${
             isMuted
               ? "bg-gray-200 text-black"
               : "bg-white text-black hover:bg-gray-200"
@@ -123,7 +123,7 @@ const Controlbar = ({
           title={isMuted ? "Unmute" : "Mute"}
         >
           <svg
-            className="w-5 h-5"
+            className="w-4 h-4 sm:w-5 sm:h-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -152,7 +152,7 @@ const Controlbar = ({
             e.stopPropagation();
             toggleVideo();
           }}
-          className={`p-2 rounded-xl font-medium transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-black ${
+          className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl font-medium transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-black ${
             !isVideoOn
               ? "bg-gray-200 text-black"
               : "bg-white text-black hover:bg-gray-200"
@@ -160,7 +160,7 @@ const Controlbar = ({
           title={isVideoOn ? "Turn off camera" : "Turn on camera"}
         >
           <svg
-            className="w-5 h-5"
+            className="w-4 h-4 sm:w-5 sm:h-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -190,7 +190,7 @@ const Controlbar = ({
             e.stopPropagation();
             toggleCaptions();
           }}
-          className={`px-3 py-2 rounded-xl font-semibold transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-black ${
+          className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-black ${
             showCaptions
               ? "bg-gray-200 text-black"
               : "bg-white text-black hover:bg-gray-200"
@@ -198,7 +198,7 @@ const Controlbar = ({
         >
           <div className="flex items-center space-x-1">
             <svg
-              className="w-4 h-4"
+              className="w-3 h-3 sm:w-4 sm:h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -210,19 +210,19 @@ const Controlbar = ({
                 d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m0 0V1a1 1 0 011 1v2M7 4a1 1 0 00-1 1v14a1 1 0 001 1h10a1 1 0 001-1V5a1 1 0 00-1-1M7 4h10M9 12h6m-6 4h6"
               />
             </svg>
-            <span className="text-sm">{showCaptions ? "Hide" : "Show"}</span>
+            <span className="text-xs sm:text-sm hidden xs:inline">{showCaptions ? "Hide" : "Show"}</span>
           </div>
         </button>
 
         <div className="flex items-center space-x-1">
-          <label className="text-md font-medium text-black">Language:</label>
+          <label className="text-xs sm:text-sm font-medium text-black hidden md:inline">Language:</label>
           <select
             value={selectedLanguage}
             onChange={(e) => {
               e.stopPropagation();
               setSelectedLanguage(e.target.value);
             }}
-            className="px-1 py-1 rounded-xl border-2 border-black bg-white text-black focus:outline-nontransition-all duration-200 text-md "
+            className="px-1 sm:px-2 py-1 rounded-lg sm:rounded-xl border-2 border-black bg-white text-black focus:outline-none transition-all duration-200 text-xs sm:text-sm"
           >
             <option value="en">English</option>
             <option value="es">Spanish</option>
@@ -251,7 +251,7 @@ const Controlbar = ({
             e.stopPropagation();
             toggleScreenShare();
           }}
-          className={`p-2 rounded-xl font-medium transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-black ${
+          className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl font-medium transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-black ${
             isScreenSharing
               ? "bg-gray-200 text-black"
               : "bg-white text-black hover:bg-gray-200"
@@ -259,7 +259,7 @@ const Controlbar = ({
           title={isScreenSharing ? "Stop sharing" : "Share screen"}
         >
           <svg
-            className="w-5 h-5"
+            className="w-4 h-4 sm:w-5 sm:h-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -281,23 +281,23 @@ const Controlbar = ({
             if (isRecording) onStopRecording();
             else onStartRecording();
           }}
-          className={`px-2 py-2 rounded-lg font-semibold transition-all duration-150 shadow-soft hover:shadow-medium border-2 border-black ${
+          className={`px-1.5 sm:px-2 py-1.5 sm:py-2 rounded-lg font-semibold transition-all duration-150 shadow-soft hover:shadow-medium border-2 border-black ${
             isRecording
               ? "bg-red-600 text-white"
               : "bg-white text-black hover:bg-gray-200"
           }`}
           title={isRecording ? "Stop recording" : "Record meeting"}
         >
-          <div className="flex items-center space-x-2">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+          <div className="flex items-center space-x-1 sm:space-x-2">
+            <svg className="w-3 h-3 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="currentColor">
               <circle cx="12" cy="12" r="6" />
             </svg>
-            <span className="text-xs">{isRecording ? "Stop" : "Record"}</span>
+            <span className="text-[10px] sm:text-xs">{isRecording ? "Stop" : "Record"}</span>
           </div>
         </button>
         {/* End Meeting (host) or Leave (others) */}
         {isCreator ? (
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 sm:space-x-2">
             <button
               type="button"
               onClick={(e) => {
@@ -306,10 +306,11 @@ const Controlbar = ({
                 handleEndMeeting();
               }}
               disabled={endingMeeting}
-              className="px-5 py-2 rounded-xl font-bold bg-error-600 text-white shadow-soft border-2 border-error-700 hover:bg-error-700 transition-all duration-200"
+              className="px-2 sm:px-3 md:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold bg-error-600 text-white shadow-soft border-2 border-error-700 hover:bg-error-700 transition-all duration-200 text-xs sm:text-sm whitespace-nowrap"
               title="End Meeting"
             >
-              {endingMeeting ? "Ending..." : "End Meeting"}
+              {endingMeeting ? "Ending..." : <span className="hidden xs:inline">End Meeting</span>}
+              {!endingMeeting && <span className="xs:hidden">End</span>}
             </button>
 
             <button
@@ -319,7 +320,7 @@ const Controlbar = ({
                 e.stopPropagation();
                 handleLeave();
               }}
-              className="px-2 py-2 rounded-xl font-bold bg-white text-black shadow-soft border-2 border-black hover:bg-gray-200 transition-all duration-200"
+              className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold bg-white text-black shadow-soft border-2 border-black hover:bg-gray-200 transition-all duration-200 text-xs sm:text-sm whitespace-nowrap"
               title="Leave Meeting"
             >
               Leave
@@ -333,14 +334,14 @@ const Controlbar = ({
               e.stopPropagation();
               handleLeave();
             }}
-            className="px-3 py-2 rounded-xl font-bold bg-white text-black shadow-soft border-2 border-black hover:bg-gray-200 transition-all duration-200"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold bg-white text-black shadow-soft border-2 border-black hover:bg-gray-200 transition-all duration-200 text-xs sm:text-sm whitespace-nowrap"
             title="Leave Meeting"
           >
             Leave
           </button>
         )}
         {endMeetingError && (
-          <span className="text-error-600 ml-4 font-semibold">
+          <span className="text-error-600 ml-1 sm:ml-2 md:ml-4 font-semibold text-xs sm:text-sm">
             {endMeetingError}
           </span>
         )}
