@@ -203,7 +203,7 @@ export default function MeetingStage({
     const cx = w / 2;
     const cy = h / 2;
 
-    const maxOuterRadius = Math.max(350, Math.min(w, h) / 2 - tilePx - 420);
+    const maxOuterRadius = Math.max(300, Math.min(w, h) / 2 - tilePx - 420);
     const minRadius = Math.max(tilePx * 4.0, 240);
 
     const perRing = 3;
