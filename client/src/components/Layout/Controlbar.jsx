@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import meetingService from "../../services/meetingService";
 
 const Controlbar = ({
@@ -27,6 +27,8 @@ const Controlbar = ({
   user,
   meetingId,
 }) => {
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+
   const handleLeave = async () => {
     try {
       if (meetingId) {
@@ -63,23 +65,215 @@ const Controlbar = ({
       }
     );
   };
+  
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-neutral-200 px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 shadow-hard">
-      <div className="flex items-center justify-center space-x-1 sm:space-x-2 md:space-x-4 overflow-x-auto">
-        <div className="flex items-center space-x-1 sm:space-x-2 mr-1 sm:mr-2 md:mr-4">
+    <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-white via-wwc-50 to-white border-t-2 border-wwc-700 px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 shadow-hard">
+      {/* More Menu Popup - appears above the control bar */}
+      {showMoreMenu && (
+        <div className="absolute bottom-full left-0 right-0 mb-1 mx-2 bg-gradient-to-br from-white to-wwc-50 border-2 border-wwc-700 rounded-lg shadow-hard p-1.5 md:hidden overflow-x-auto">
+          <div className="flex items-center space-x-1.5 min-w-max">
+            {/* Participants */}
+            <button
+              onClick={() => {
+                setActivePanel(activePanel === "users" ? null : "users");
+                setShowMoreMenu(false);
+              }}
+              className={`p-1.5 rounded-md font-medium transition-all duration-200 border-2 border-wwc-700 flex items-center justify-center ${
+                activePanel === "users"
+                  ? "bg-gradient-to-br from-wwc-600 to-wwc-700 text-white shadow-soft"
+                  : "bg-white text-wwc-700 hover:bg-wwc-50"
+              }`}
+              title="Participants"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 20h5v-2a3 3 0 00-5.196-2.121M9 6a3 3 0 106 0 3 3 0 00-6 0zM7 20a3 3 0 015.196-2.121M15 6a3 3 0 106 0 3 3 0 00-6 0z"
+                />
+              </svg>
+            </button>
+
+            {/* Chat */}
+            <button
+              onClick={() => {
+                setActivePanel(activePanel === "chat" ? null : "chat");
+                setShowMoreMenu(false);
+              }}
+              className={`p-1.5 rounded-md font-medium transition-all duration-200 border-2 border-wwc-700 flex items-center justify-center ${
+                activePanel === "chat"
+                  ? "bg-gradient-to-br from-wwc-600 to-wwc-700 text-white shadow-soft"
+                  : "bg-white text-wwc-700 hover:bg-wwc-50"
+              }`}
+              title="Chat"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </svg>
+            </button>
+
+            {/* Copy Link */}
+            <button
+              onClick={() => {
+                handleCopyLink();
+                setShowMoreMenu(false);
+              }}
+              className="p-1.5 rounded-md font-medium transition-all duration-200 border-2 border-wwc-700 flex items-center justify-center bg-white text-wwc-700 hover:bg-wwc-50"
+              title="Copy Link"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                />
+              </svg>
+            </button>
+
+            {/* Captions */}
+            <button
+              onClick={() => {
+                toggleCaptions();
+                setShowMoreMenu(false);
+              }}
+              className={`p-1.5 rounded-md font-medium transition-all duration-200 border-2 border-wwc-700 flex items-center justify-center ${
+                showCaptions
+                  ? "bg-gradient-to-br from-wwc-600 to-wwc-700 text-white shadow-soft"
+                  : "bg-white text-wwc-700 hover:bg-wwc-50"
+              }`}
+              title={showCaptions ? "Hide Captions" : "Show Captions"}
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m0 0V1a1 1 0 011 1v2M7 4a1 1 0 00-1 1v14a1 1 0 001 1h10a1 1 0 001-1V5a1 1 0 00-1-1M7 4h10M9 12h6m-6 4h6"
+                />
+              </svg>
+            </button>
+
+            {/* Language Selector */}
+            <select
+              value={selectedLanguage}
+              onChange={(e) => {
+                e.stopPropagation();
+                setSelectedLanguage(e.target.value);
+              }}
+              className="px-1.5 py-1 rounded-md border-2 border-wwc-700 bg-white text-wwc-700 focus:outline-none focus:ring-2 focus:ring-wwc-500 transition-all duration-200 text-[10px] font-medium"
+              title="Select Language"
+            >
+              <option value="en">EN</option>
+              <option value="es">ES</option>
+              <option value="fr">FR</option>
+              <option value="de">DE</option>
+              <option value="zh">ZH</option>
+              <option value="ja">JA</option>
+              <option value="ru">RU</option>
+              <option value="hi">HI</option>
+              <option value="ta">TA</option>
+              <option value="bn">BN</option>
+              <option value="te">TE</option>
+              <option value="ml">ML</option>
+              <option value="kn">KN</option>
+              <option value="pa">PA</option>
+              <option value="gu">GU</option>
+              <option value="mr">MR</option>
+            </select>
+
+            {/* Screen Share */}
+            <button
+              onClick={() => {
+                toggleScreenShare();
+                setShowMoreMenu(false);
+              }}
+              className={`p-1.5 rounded-md font-medium transition-all duration-200 border-2 border-wwc-700 flex items-center justify-center ${
+                isScreenSharing
+                  ? "bg-gradient-to-br from-wwc-600 to-wwc-700 text-white shadow-soft"
+                  : "bg-white text-wwc-700 hover:bg-wwc-50"
+              }`}
+              title={isScreenSharing ? "Stop Sharing" : "Share Screen"}
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+                />
+              </svg>
+            </button>
+
+            {/* Record */}
+            <button
+              onClick={() => {
+                if (isRecording) onStopRecording();
+                else onStartRecording();
+                setShowMoreMenu(false);
+              }}
+              className={`p-1.5 rounded-md font-medium transition-all duration-200 border-2 border-wwc-700 flex items-center justify-center ${
+                isRecording
+                  ? "bg-gradient-to-br from-red-600 to-red-700 text-white"
+                  : "bg-white text-wwc-700 hover:bg-wwc-50"
+              }`}
+              title={isRecording ? "Stop Recording" : "Start Recording"}
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="12" r="6" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center justify-center space-x-1 sm:space-x-2 md:space-x-4">
+        {/* Desktop view - all buttons visible */}
+        <div className="hidden md:flex items-center space-x-2 mr-4">
           <button
             onClick={() =>
               setActivePanel(activePanel === "users" ? null : "users")
             }
-            className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-medium transition-all duration-200 border-2 border-black text-xs sm:text-sm flex items-center space-x-1 sm:space-x-2 ${
+            className={`px-3 py-2 rounded-lg font-medium transition-all duration-200 border-2 border-wwc-700 text-sm flex items-center space-x-2 ${
               activePanel === "users"
-                ? "bg-gray-200 text-black shadow-soft"
-                : "bg-white text-black hover:bg-gray-200"
+                ? "bg-gradient-to-br from-wwc-600 to-wwc-700 text-white shadow-soft"
+                : "bg-white text-wwc-700 hover:bg-wwc-50"
             }`}
             title="Participants"
           >
             <svg
-              className="w-3 h-3 sm:w-4 sm:h-4"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -91,22 +285,22 @@ const Controlbar = ({
                 d="M17 20h5v-2a3 3 0 00-5.196-2.121M9 6a3 3 0 106 0 3 3 0 00-6 0zM7 20a3 3 0 015.196-2.121M15 6a3 3 0 106 0 3 3 0 00-6 0z"
               />
             </svg>
-            <span className="hidden xs:inline">Participants</span>
+            <span>Participants</span>
           </button>
 
           <button
             onClick={() =>
               setActivePanel(activePanel === "chat" ? null : "chat")
             }
-            className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-medium transition-all duration-200 border-2 border-black text-xs sm:text-sm flex items-center space-x-1 sm:space-x-2 ${
+            className={`px-3 py-2 rounded-lg font-medium transition-all duration-200 border-2 border-wwc-700 text-sm flex items-center space-x-2 ${
               activePanel === "chat"
-                ? "bg-gray-200 text-black shadow-soft"
-                : "bg-white text-black hover:bg-gray-200"
+                ? "bg-gradient-to-br from-wwc-600 to-wwc-700 text-white shadow-soft"
+                : "bg-white text-wwc-700 hover:bg-wwc-50"
             }`}
             title="Chat"
           >
             <svg
-              className="w-3 h-3 sm:w-4 sm:h-4"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -118,16 +312,16 @@ const Controlbar = ({
                 d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
               />
             </svg>
-            <span className="hidden xs:inline">Chat</span>
+            <span>Chat</span>
           </button>
 
           <button
             onClick={handleCopyLink}
-            className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-medium transition-all duration-200 border-2 border-black text-xs sm:text-sm flex items-center space-x-1 sm:space-x-2 bg-white text-black hover:bg-gray-200"
+            className="px-3 py-2 rounded-lg font-medium transition-all duration-200 border-2 border-wwc-700 text-sm flex items-center space-x-2 bg-white text-wwc-700 hover:bg-wwc-50"
             title="Copy meeting link"
           >
             <svg
-              className="w-3 h-3 sm:w-4 sm:h-4"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -139,9 +333,32 @@ const Controlbar = ({
                 d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
               />
             </svg>
-            <span className="hidden xs:inline">Copy Link</span>
+            <span>Copy Link</span>
           </button>
         </div>
+
+        {/* Mobile view - three dot menu button */}
+        <button
+          onClick={() => setShowMoreMenu(!showMoreMenu)}
+          className="md:hidden p-2 rounded-lg font-medium transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-wwc-700 bg-white text-wwc-700 hover:bg-wwc-50"
+          title="More options"
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+            />
+          </svg>
+        </button>
+
+        {/* Mute Button - Always visible */}
         <button
           type="button"
           onClick={(e) => {
@@ -149,10 +366,10 @@ const Controlbar = ({
             e.stopPropagation();
             toggleMute();
           }}
-          className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl font-medium transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-black ${
+          className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl font-medium transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-wwc-700 ${
             isMuted
-              ? "bg-gray-200 text-black"
-              : "bg-white text-black hover:bg-gray-200"
+              ? "bg-gradient-to-br from-red-500 to-red-600 text-white"
+              : "bg-white text-wwc-700 hover:bg-wwc-50"
           }`}
           title={isMuted ? "Unmute" : "Mute"}
         >
@@ -162,23 +379,26 @@ const Controlbar = ({
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            {isMuted ? (
+            {/* Microphone icon */}
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+            />
+            {/* Slash overlay when muted */}
+            {isMuted && (
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M5.636 5.636l12.728 12.728M5.636 18.364L18.364 5.636"
-              />
-            ) : (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                d="M5.5 18.5L18.5 5.5"
               />
             )}
           </svg>
         </button>
+
+        {/* Video Button - Always visible */}
         <button
           type="button"
           onClick={(e) => {
@@ -186,10 +406,10 @@ const Controlbar = ({
             e.stopPropagation();
             toggleVideo();
           }}
-          className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl font-medium transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-black ${
+          className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl font-medium transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-wwc-700 ${
             !isVideoOn
-              ? "bg-gray-200 text-black"
-              : "bg-white text-black hover:bg-gray-200"
+              ? "bg-gradient-to-br from-red-500 to-red-600 text-white"
+              : "bg-white text-wwc-700 hover:bg-wwc-50"
           }`}
           title={isVideoOn ? "Turn off camera" : "Turn on camera"}
         >
@@ -199,24 +419,26 @@ const Controlbar = ({
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            {isVideoOn ? (
+            {/* Camera icon */}
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+            />
+            {/* Slash overlay when camera is off */}
+            {!isVideoOn && (
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-              />
-            ) : (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5.636 5.636l12.728 12.728M5.636 18.364L18.364 5.636"
+                d="M5.5 18.5L18.5 5.5"
               />
             )}
           </svg>
         </button>
 
+        {/* Desktop-only controls */}
         <button
           type="button"
           onClick={(e) => {
@@ -224,15 +446,15 @@ const Controlbar = ({
             e.stopPropagation();
             toggleCaptions();
           }}
-          className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-black ${
+          className={`hidden md:flex px-3 py-2 rounded-xl font-semibold transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-wwc-700 ${
             showCaptions
-              ? "bg-gray-200 text-black"
-              : "bg-white text-black hover:bg-gray-200"
+              ? "bg-gradient-to-br from-wwc-600 to-wwc-700 text-white"
+              : "bg-white text-wwc-700 hover:bg-wwc-50"
           }`}
         >
           <div className="flex items-center space-x-1">
             <svg
-              className="w-3 h-3 sm:w-4 sm:h-4"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -244,19 +466,19 @@ const Controlbar = ({
                 d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m0 0V1a1 1 0 011 1v2M7 4a1 1 0 00-1 1v14a1 1 0 001 1h10a1 1 0 001-1V5a1 1 0 00-1-1M7 4h10M9 12h6m-6 4h6"
               />
             </svg>
-            <span className="text-xs sm:text-sm hidden xs:inline">{showCaptions ? "Hide" : "Show"}</span>
+            <span className="text-sm">{showCaptions ? "Hide" : "Show"}</span>
           </div>
         </button>
 
-        <div className="flex items-center space-x-1">
-          <label className="text-xs sm:text-sm font-medium text-black hidden md:inline">Language:</label>
+        <div className="hidden md:flex items-center space-x-1">
+          <label className="text-sm font-medium text-wwc-700">Language:</label>
           <select
             value={selectedLanguage}
             onChange={(e) => {
               e.stopPropagation();
               setSelectedLanguage(e.target.value);
             }}
-            className="px-1 sm:px-2 py-1 rounded-lg sm:rounded-xl border-2 border-black bg-white text-black focus:outline-none transition-all duration-200 text-xs sm:text-sm"
+            className="px-2 py-1 rounded-xl border-2 border-wwc-700 bg-white text-wwc-700 focus:outline-none focus:ring-2 focus:ring-wwc-500 transition-all duration-200 text-sm"
           >
             <option value="en">English</option>
             <option value="es">Spanish</option>
@@ -277,7 +499,7 @@ const Controlbar = ({
           </select>
         </div>
 
-        {/* Screen Share */}
+        {/* Screen Share - Desktop only */}
         <button
           type="button"
           onClick={(e) => {
@@ -285,15 +507,15 @@ const Controlbar = ({
             e.stopPropagation();
             toggleScreenShare();
           }}
-          className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl font-medium transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-black ${
+          className={`hidden md:flex p-2 rounded-xl font-medium transition-all duration-200 shadow-soft hover:shadow-medium border-2 border-wwc-700 ${
             isScreenSharing
-              ? "bg-gray-200 text-black"
-              : "bg-white text-black hover:bg-gray-200"
+              ? "bg-gradient-to-br from-wwc-600 to-wwc-700 text-white"
+              : "bg-white text-wwc-700 hover:bg-wwc-50"
           }`}
           title={isScreenSharing ? "Stop sharing" : "Share screen"}
         >
           <svg
-            className="w-4 h-4 sm:w-5 sm:h-5"
+            className="w-5 h-5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -306,7 +528,8 @@ const Controlbar = ({
             />
           </svg>
         </button>
-        {/* Record Meeting - visible to everyone */}
+
+        {/* Record Meeting - Desktop only */}
         <button
           type="button"
           onClick={(e) => {
@@ -315,21 +538,22 @@ const Controlbar = ({
             if (isRecording) onStopRecording();
             else onStartRecording();
           }}
-          className={`px-1.5 sm:px-2 py-1.5 sm:py-2 rounded-lg font-semibold transition-all duration-150 shadow-soft hover:shadow-medium border-2 border-black ${
+          className={`hidden md:flex px-2 py-2 rounded-lg font-semibold transition-all duration-150 shadow-soft hover:shadow-medium border-2 border-wwc-700 ${
             isRecording
-              ? "bg-red-600 text-white"
-              : "bg-white text-black hover:bg-gray-200"
+              ? "bg-gradient-to-br from-red-600 to-red-700 text-white"
+              : "bg-white text-wwc-700 hover:bg-wwc-50"
           }`}
           title={isRecording ? "Stop recording" : "Record meeting"}
         >
-          <div className="flex items-center space-x-1 sm:space-x-2">
-            <svg className="w-3 h-3 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="currentColor">
+          <div className="flex items-center space-x-2">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
               <circle cx="12" cy="12" r="6" />
             </svg>
-            <span className="text-[10px] sm:text-xs">{isRecording ? "Stop" : "Record"}</span>
+            <span className="text-xs">{isRecording ? "Stop" : "Record"}</span>
           </div>
         </button>
-        {/* End Meeting (host) or Leave (others) */}
+
+        {/* End Meeting (host) or Leave (others) - Always visible */}
         {isCreator ? (
           <div className="flex items-center space-x-1 sm:space-x-2">
             <button
@@ -354,7 +578,7 @@ const Controlbar = ({
                 e.stopPropagation();
                 handleLeave();
               }}
-              className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold bg-white text-black shadow-soft border-2 border-black hover:bg-gray-200 transition-all duration-200 text-xs sm:text-sm whitespace-nowrap"
+              className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold bg-white text-wwc-700 shadow-soft border-2 border-wwc-700 hover:bg-wwc-50 transition-all duration-200 text-xs sm:text-sm whitespace-nowrap"
               title="Leave Meeting"
             >
               Leave
@@ -368,7 +592,7 @@ const Controlbar = ({
               e.stopPropagation();
               handleLeave();
             }}
-            className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold bg-white text-black shadow-soft border-2 border-black hover:bg-gray-200 transition-all duration-200 text-xs sm:text-sm whitespace-nowrap"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold bg-white text-wwc-700 shadow-soft border-2 border-wwc-700 hover:bg-wwc-50 transition-all duration-200 text-xs sm:text-sm whitespace-nowrap"
             title="Leave Meeting"
           >
             Leave

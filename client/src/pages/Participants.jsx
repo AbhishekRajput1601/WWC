@@ -2,8 +2,8 @@ import React from "react";
 
 const AllUsers = ({ user, isMuted, participants }) => (
   <div className="w-full sm:w-[340px] md:w-[380px] h-[500px] sm:h-[580px] md:h-[620px] max-h-[calc(100vh-120px)] bg-white border-2 border-black rounded-xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden mb-4 sm:mb-12 md:mb-20 mt-2 mr-0 sm:mr-3 md:mr-5">
-    <div className="p-3 sm:p-4 border-b-2 border-black bg-neutral-50">
-      <h3 className="font-bold text-neutral-900 font-display text-base sm:text-lg">
+    <div className="p-3 sm:p-4 border-b-2 border-black bg-gradient-to-r from-wwc-600 to-wwc-700">
+      <h3 className="text-white font-display text-base sm:text-lg">
         Participants ({1 + (participants?.length || 0)})
       </h3>
     </div>

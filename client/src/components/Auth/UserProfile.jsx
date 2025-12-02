@@ -434,7 +434,7 @@ const UserProfile = () => {
                       )}
                     </td>
                     <td className="py-2 px-2 sm:px-3 md:px-4">
-                      {m.captionsTextPath ? (
+                      {m.captionsText ? (
                         <button
                           onClick={() => openCaptions(m)}
                           className="bg-wwc-600 hover:bg-wwc-700 text-white font-medium py-1 px-2 sm:px-3 rounded-md text-xs sm:text-sm transition-colors whitespace-nowrap"
@@ -766,35 +766,6 @@ const UserProfile = () => {
                 onChange={handleChange}
                 className="mt-1 block w-full border rounded-md px-2 sm:px-3 py-1.5 sm:py-2 text-sm"
               />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700">
-                  Role
-                </label>
-                <input
-                  type="text"
-                  name="role"
-                  value={form.role}
-                  className="mt-1 block w-full border rounded-md px-2 sm:px-3 py-1.5 sm:py-2 text-sm bg-gray-50"
-                  disabled={form.role === "admin"}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700">
-                  Default language
-                </label>
-                <input
-                  type="text"
-                  name="preferences.defaultLanguage"
-                  value={form.preferences?.defaultLanguage || ""}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border rounded-md px-2 sm:px-3 py-1.5 sm:py-2 text-sm"
-                />
-              </div>
             </div>
 
             <div className="flex items-center justify-end space-x-2 sm:space-x-3">

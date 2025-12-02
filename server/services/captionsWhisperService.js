@@ -3,53 +3,66 @@ import FormData from 'form-data';
 import fs from 'fs';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+import { Readable } from 'stream';
+import stream from 'stream';
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 const WHISPER_URL = process.env.WHISPER_URL || 'http://localhost:5001/transcribe';
 
-export async function transcribeAudio(filePath, language = null, translate = false) {
-  const ext = filePath.split('.').pop().toLowerCase();
-  let wavPath;
-  if (ext === 'wav') {
-    wavPath = filePath.replace(/\.wav$/, '') + '_converted.wav';
-  } else {
-    wavPath = filePath.replace(/\.[^/.]+$/, '') + '.wav';
-  }
-  await new Promise((resolve, reject) => {
-    ffmpeg(filePath)
-      .output(wavPath)
+async function convertToWavBufferFromStream(readable) {
+  return new Promise((resolve, reject) => {
+    const passthrough = new stream.PassThrough();
+    const chunks = [];
+    passthrough.on('data', (c) => chunks.push(c));
+    passthrough.on('end', () => resolve(Buffer.concat(chunks)));
+    passthrough.on('error', reject);
+
+    ffmpeg(readable)
+      .outputFormat('wav')
       .audioChannels(1)
       .audioFrequency(16000)
       .audioCodec('pcm_s16le')
-      .format('wav')
-      .on('start', commandLine => {
-        console.log('FFmpeg command:', commandLine);
-      })
-      .on('end', () => {
-        console.log('FFmpeg conversion finished:', wavPath);
-        resolve();
-      })
-      .on('error', err => {
-        console.error('FFmpeg error:', err);
-        reject(err);
-      })
-      .run();
+      .on('error', (err) => reject(err))
+      .pipe(passthrough);
   });
+}
 
-  const form = new FormData();
-  form.append('audio', fs.createReadStream(wavPath));
-  if (language) form.append('language', language);
-  form.append('translate', translate ? 'true' : 'false');
+/**
+ * transcribeAudio accepts either a file path (string) or a Buffer.
+ * It converts input to a WAV buffer in-memory and sends the buffer
+ * directly to the Whisper HTTP service without writing anything to disk.
+ */
+export async function transcribeAudio(fileOrBuffer, language = null, translate = false) {
+  let wavBuffer;
 
   try {
+    if (Buffer.isBuffer(fileOrBuffer)) {
+      const readable = new Readable();
+      readable._read = () => {};
+      readable.push(fileOrBuffer);
+      readable.push(null);
+      wavBuffer = await convertToWavBufferFromStream(readable);
+    } else if (typeof fileOrBuffer === 'string') {
+      // file path
+      const readable = fs.createReadStream(fileOrBuffer);
+      wavBuffer = await convertToWavBufferFromStream(readable);
+    } else {
+      throw new Error('Invalid input to transcribeAudio, expected Buffer or file path');
+    }
+
+    const form = new FormData();
+    form.append('audio', wavBuffer, { filename: 'audio.wav' });
+    if (language) form.append('language', language);
+    form.append('translate', translate ? 'true' : 'false');
+
     const response = await axios.post(WHISPER_URL, form, {
       headers: form.getHeaders(),
       maxBodyLength: Infinity,
+      timeout: 120000,
     });
-    fs.unlinkSync(wavPath);
+
     return response.data;
   } catch (err) {
-    fs.unlinkSync(wavPath);
-    throw err.response ? err.response.data : err;
+    throw err && err.response ? err.response.data || err : err;
   }
 }

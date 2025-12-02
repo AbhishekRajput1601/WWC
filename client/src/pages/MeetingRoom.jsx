@@ -744,6 +744,8 @@ const MeetingRoom = () => {
             showCaptions={showCaptions}
             currentCaption={currentCaption}
             user={user}
+            isMuted={isMuted}
+            isVideoOn={isVideoOn}
           />
 
           <MeetingSidePanel

@@ -183,47 +183,35 @@ export const endMeeting = async (req, res) => {
 
     await meeting.save();
 
+    // gather captions from DB and store caption text in meeting record (no filesystem)
     try {
       const captionsDoc = await Caption.findOne({ meetingId });
       if (captionsDoc && captionsDoc.captions && captionsDoc.captions.length) {
-        const outDir = path.join(__dirname, '..', 'captions');
         try {
-          await fs.mkdir(outDir, { recursive: true });
+          await captionsDoc.populate('captions.speaker', 'name');
         } catch (e) {
-          console.error('Failed to create captions directory:', e);
+          logger.debug('Failed to populate caption speakers:', e);
         }
 
-        const ts = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = `meeting-${meetingId}-${ts}.txt`;
-        const outPath = path.join(outDir, filename);
+        const items = captionsDoc.captions.slice().sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        const lines = items
+          .map(c => {
+            const text = (c.originalText || '').toString().trim();
+            if (!text) return null;
+            let speakerName = 'Unknown';
+            if (c.speaker) {
+              speakerName = typeof c.speaker === 'object' && c.speaker.name ? c.speaker.name : String(c.speaker);
+            }
+            return `${speakerName}: ${text}`;
+          })
+          .filter(t => t && t.length > 0);
+        const content = lines.join('\n') + (lines.length ? '\n' : '');
 
-          try {
-            await captionsDoc.populate('captions.speaker', 'name');
-          } catch (e) {
-            console.error('Failed to populate caption speakers:', e);
-          }
-
-          const items = captionsDoc.captions.slice().sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-          const lines = items
-            .map(c => {
-              const text = (c.originalText || '').toString().trim();
-              if (!text) return null;
-              let speakerName = 'Unknown';
-              if (c.speaker) {
-                // speaker may be populated (object) or just an id
-                speakerName = typeof c.speaker === 'object' && c.speaker.name ? c.speaker.name : String(c.speaker);
-              }
-              return `${speakerName}: ${text}`;
-            })
-            .filter(t => t && t.length > 0);
-          const content = lines.join('\n') + (lines.length ? '\n' : '');
-
-        await fs.writeFile(outPath, content, { encoding: 'utf8' });
-        meeting.captionsTextPath = outPath; 
+        meeting.captionsText = content;
         await meeting.save();
       }
     } catch (err) {
-      logger.error('Failed to export captions on meeting end:', err);
+      logger.error('Failed to gather captions on meeting end:', err);
     }
 
     logger.info(`Meeting ended: ${meetingId} by ${req.user.email}`);
@@ -572,19 +560,12 @@ export const getMeetingCaptionsText = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Not authorized to view captions' });
     }
 
-    if (!meeting.captionsTextPath) {
-      return res.status(404).json({ success: false, message: 'No captions file available for this meeting' });
+    if (!meeting.captionsText) {
+      return res.status(404).json({ success: false, message: 'No captions available for this meeting' });
     }
 
-    try {
-      const filePath = meeting.captionsTextPath;
-      const content = await fs.readFile(filePath, { encoding: 'utf8' });
-      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      res.send(content);
-    } catch (err) {
-      logger.error('Error reading captions file:', err);
-      return res.status(500).json({ success: false, message: 'Error reading captions file' });
-    }
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.send(meeting.captionsText);
   } catch (error) {
     logger.error('getMeetingCaptionsText error:', error);
     res.status(500).json({ success: false, message: 'Server error' });

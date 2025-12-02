@@ -1,8 +1,6 @@
 import Caption from "../models/Caption.js";
 import logger from "../utils/logger.js";
 import { transcribeAudio } from "../services/captionsWhisperService.js";
-import fs from "fs";
-import path from "path";
 
 export const transcribeAudioHandler = async (req, res) => {
   try {
@@ -13,16 +11,8 @@ export const transcribeAudioHandler = async (req, res) => {
     }
 
     const audioFile = req.file;
-    const tempDir = path.join(process.cwd(), "audioFile");
-    try {
-      await fs.promises.mkdir(tempDir, { recursive: true });
-    } catch (e) {}
-    const safeName = (audioFile.originalname || "audio").replace(
-      /[^a-zA-Z0-9.\-_]/g,
-      "_"
-    );
-    const tempPath = path.join(tempDir, `temp_${Date.now()}_${safeName}`);
-    await fs.promises.writeFile(tempPath, audioFile.buffer);
+    // process audio buffer in-memory (do not write to disk)
+    const tempPath = null;
 
     const requestedLanguage =
       req.body && req.body.language ? req.body.language : null;
@@ -41,10 +31,7 @@ export const transcribeAudioHandler = async (req, res) => {
     }
     const speaker = req.user?._id;
 
-    const result = await transcribeAudio(tempPath, null, translate);
-    try {
-      await fs.promises.unlink(tempPath);
-    } catch (e) {}
+    const result = await transcribeAudio(audioFile.buffer, null, translate);
 
     let translatedCaptions = [];
     const detectedLanguage = result && result.language ? result.language : null;
