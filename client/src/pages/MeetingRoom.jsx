@@ -288,9 +288,16 @@ const MeetingRoom = () => {
       try {
         localStream = await navigator.mediaDevices.getUserMedia({
           video: true,
-          audio: true,
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            latency: 0,
+            sampleRate: 48000,
+          },
         });
         if (!isMounted) return;
+        console.log('[WWC] Local stream tracks:', localStream.getTracks().map(t => `${t.kind}/${t.id.substring(0, 8)}`));
         setMediaStream(localStream);
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = localStream;
@@ -357,7 +364,9 @@ const MeetingRoom = () => {
           );
           const answer = await peerConnections.current[
             fromSocketId
-          ].createAnswer();
+          ].createAnswer({
+            voiceActivityDetection: false,
+          });
           await peerConnections.current[fromSocketId].setLocalDescription(
             answer
           );
@@ -600,10 +609,18 @@ const MeetingRoom = () => {
     const rtcConfig = iceServers.current || {
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     };
+    // Add low-latency optimizations
+    rtcConfig.sdpSemantics = 'unified-plan';
+    rtcConfig.bundlePolicy = 'max-bundle';
+    rtcConfig.rtcpMuxPolicy = 'require';
+    rtcConfig.iceTransportPolicy = 'all';
+    
     const pc = new RTCPeerConnection(rtcConfig);
     peerConnections.current[socketId] = pc;
+    console.log('[WWC] Created peer connection for:', socketId, '| Total peers:', Object.keys(peerConnections.current).length);
 
     localStream.getTracks().forEach((track) => {
+      console.log('[WWC] Adding track to peer:', track.kind, track.id.substring(0, 8), '-> socketId:', socketId);
       pc.addTrack(track, localStream);
     });
 
@@ -627,10 +644,16 @@ const MeetingRoom = () => {
     if (isInitiator) {
       pc.onnegotiationneeded = async () => {
         try {
-          const offer = await pc.createOffer();
+          const offer = await pc.createOffer({
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: true,
+            voiceActivityDetection: false,
+          });
           await pc.setLocalDescription(offer);
           sock.emit("offer", { offer, targetSocketId: socketId });
-        } catch (e) {}
+        } catch (e) {
+          console.error('[WWC] Error creating offer:', e);
+        }
       };
     }
   };

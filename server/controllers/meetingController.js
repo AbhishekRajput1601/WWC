@@ -71,10 +71,17 @@ export const joinMeeting = async (req, res) => {
     }
 
     const existingParticipant = meeting.participants.find(
-      p => p.user.toString() === req.user.id && p.isActive
+      p => p.user.toString() === req.user.id
     );
 
-    if (!existingParticipant) {
+    if (existingParticipant) {
+      if (!existingParticipant.isActive) {
+        existingParticipant.isActive = true;
+        existingParticipant.joinedAt = new Date();
+        existingParticipant.leftAt = undefined;
+        await meeting.save();
+      }
+    } else {
       meeting.participants.push({
         user: req.user.id,
         joinedAt: new Date(),

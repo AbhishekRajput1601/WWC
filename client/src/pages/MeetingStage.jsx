@@ -6,7 +6,13 @@ const VideoTile = ({ stream, label, isLocal = false, avatarChar = "U", participa
 
   React.useEffect(() => {
     const el = ref.current;
-    if (el) el.srcObject = stream || null;
+    if (el) {
+      el.srcObject = stream || null;
+      // Optimize for low latency
+      if (el.srcObject && !isLocal) {
+        el.play().catch(e => console.log('[WWC] Video play error:', e));
+      }
+    }
 
     const computeHasVideo = () => {
       if (!stream) return false;
@@ -75,7 +81,15 @@ const VideoTile = ({ stream, label, isLocal = false, avatarChar = "U", participa
   return (
     <div className="flex flex-col items-center gap-1 sm:gap-2" style={sizePx ? { width: sizePx } : undefined}>
       <div className={`relative ${getCircleSize()} rounded-full border-2 sm:border-3 md:border-4 ${borderClass} ${ringClass} shadow-lg sm:shadow-xl overflow-hidden flex-shrink-0`} style={circleStyle}>
-        <video ref={ref} autoPlay playsInline className={`w-full h-full object-cover rounded-full ${hasVideo ? "" : "hidden"}`} muted={isLocal} />
+        <video 
+          ref={ref} 
+          autoPlay 
+          playsInline 
+          disablePictureInPicture
+          className={`w-full h-full object-cover rounded-full ${hasVideo ? "" : "hidden"}`} 
+          muted={isLocal}
+          style={{ latency: 0 }}
+        />
         {!hasVideo && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className={`bg-gradient-to-br from-wwc-600 to-wwc-700 w-full h-full rounded-full flex items-center justify-center`}>
@@ -243,11 +257,16 @@ export default function MeetingStage({
             <video
               autoPlay
               playsInline
+              disablePictureInPicture
               muted={isScreenSharing}
               className="w-full h-full object-contain"
+              style={{ latency: 0 }}
               ref={(el) => {
                 if (!el) return;
                 el.srcObject = shareStream || null;
+                if (shareStream && !isScreenSharing) {
+                  el.play().catch(e => console.log('[WWC] Screen share play error:', e));
+                }
               }}
             />
 
@@ -256,8 +275,10 @@ export default function MeetingStage({
                 <video
                   autoPlay
                   playsInline
+                  disablePictureInPicture
                   muted
                   className="w-full h-full object-cover"
+                  style={{ latency: 0 }}
                   ref={(el) => {
                     if (!el) return;
                     const pipStream = isScreenSharing ? mediaStream : remoteStreams[selfSocketId];
