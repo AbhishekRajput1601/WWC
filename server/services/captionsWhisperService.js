@@ -35,7 +35,6 @@ async function convertToWavFile(fileOrBuffer) {
     ffmpeg(inputPath)
       .outputOptions(['-ac 1', '-ar 16000', '-acodec pcm_s16le'])
       .on('error', async (err) => {
-        // cleanup
         try {
           await fs.promises.unlink(inputPath).catch(() => {});
           await fs.promises.unlink(outputPath).catch(() => {});
@@ -93,13 +92,75 @@ export async function transcribeAudio(fileOrBuffer, language = null, translate =
     if (language) form.append('language', language);
     form.append('translate', translate ? 'true' : 'false');
 
+    async function sleep(ms) {
+      return new Promise((res) => setTimeout(res, ms));
+    }
+
+    function parseRetryAfter(header) {
+      if (!header) return null;
+      const sec = Number(header);
+      if (!Number.isNaN(sec)) return sec * 1000;
+      const date = Date.parse(header);
+      if (!Number.isNaN(date)) {
+        return Math.max(0, date - Date.now());
+      }
+      return null;
+    }
+
+    function isHtmlResponse(data) {
+      if (!data) return false;
+      if (typeof data === 'string') {
+        return data.trim().startsWith('<');
+      }
+      return false;
+    }
+
+  const MAX_RETRIES = parseInt(process.env.WHISPER_MAX_RETRIES || '5', 10);
+  const TIMEOUT = parseInt(process.env.WHISPER_TIMEOUT_MS || '600000', 10);
+
+    async function sendWithRetries(attempt = 0) {
+      try {
+        const headers = Object.assign({}, form.getHeaders());
+        headers['User-Agent'] = headers['User-Agent'] || 'wwc-captions-service/1.0';
+
+        const resp = await axios.post(WHISPER_URL, form, {
+          headers,
+          maxBodyLength: Infinity,
+          timeout: TIMEOUT,
+        });
+
+        if (isHtmlResponse(resp.data)) {
+          const e = new Error('Received HTML response from whisper endpoint (possible Cloudflare or proxy challenge)');
+          e.status = resp.status || 502;
+          e.responseBody = typeof resp.data === 'string' ? resp.data.slice(0, 1024) : resp.data;
+          throw e;
+        }
+        return resp;
+      } catch (err) {   
+        const status = err && err.response ? err.response.status : null;
+        if (status === 429 && attempt < MAX_RETRIES) {
+          const header = err.response && err.response.headers ? err.response.headers['retry-after'] || err.response.headers['Retry-After'] : null;
+          const retryMs = parseRetryAfter(header) || Math.min(30000, 1000 * Math.pow(2, attempt));
+          const jitter = Math.floor(Math.random() * 500);
+          const wait = retryMs + jitter;
+          console.warn(`transcribeAudio: received 429, retrying in ${wait}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+          await sleep(wait);
+          return sendWithRetries(attempt + 1);
+        }
+
+        if (status && status >= 500 && attempt < MAX_RETRIES) {
+          const wait = Math.min(30000, 1000 * Math.pow(2, attempt)) + Math.floor(Math.random() * 500);
+          console.warn(`transcribeAudio: server error ${status}, retrying in ${wait}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+          await sleep(wait);
+          return sendWithRetries(attempt + 1);
+        }
+        throw err;
+      }
+    }
+
     let response;
     try {
-      response = await axios.post(WHISPER_URL, form, {
-        headers: form.getHeaders(),
-        maxBodyLength: Infinity,
-        timeout: parseInt(process.env.WHISPER_TIMEOUT_MS || '600000', 10),
-      });
+      response = await sendWithRetries(0);
     } finally {
       try {
         wavStream.close && wavStream.close();
