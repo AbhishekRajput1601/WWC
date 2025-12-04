@@ -11,13 +11,16 @@ export const transcribeAudioHandler = async (req, res) => {
     }
 
     const audioFile = req.file;
-    // process audio buffer in-memory (do not write to disk)
     const tempPath = null;
 
     const requestedLanguage =
       req.body && req.body.language ? req.body.language : null;
 
-    const translate = false;
+
+    const translate =
+      req.body && (req.body.translate === true || req.body.translate === 'true')
+        ? true
+        : false;
 
     let meetingId =
       req.body.meetingId || req.query.meetingId || req.headers["x-meeting-id"];
@@ -31,71 +34,22 @@ export const transcribeAudioHandler = async (req, res) => {
     }
     const speaker = req.user?._id;
 
-    const result = await transcribeAudio(audioFile.buffer, null, translate);
+    const result = await transcribeAudio(
+      audioFile.buffer,
+      requestedLanguage,
+      translate
+    );
 
     let translatedCaptions = [];
     const detectedLanguage = result && result.language ? result.language : null;
 
-    if (
-      requestedLanguage &&
-      result.captions &&
-      Array.isArray(result.captions) &&
-      requestedLanguage !== detectedLanguage
-    ) {
-      try {
-        const axios = (await import("axios")).default;
-        for (const segment of result.captions) {
-          let translatedText = "";
-          let attempts = 0;
-          const sourceLang = detectedLanguage || "auto";
-          while (attempts < 3 && !translatedText) {
-            try {
-              const translationRes = await axios.post(
-                process.env.LIBRETRANSLATE_URL || "https://libretranslate.de/translate",
-                {
-                  q: segment.text,
-                  source: sourceLang,
-                  target: requestedLanguage,
-                  format: "text",
-                }
-              );
-              translatedText = translationRes.data.translatedText;
-              if (!translatedText || !translatedText.trim()) {
-                logger.warn(
-                  `Empty translation for: ${segment.text} (attempt ${
-                    attempts + 1
-                  })`
-                );
-              }
-            } catch (err) {
-              logger.error(
-                `LibreTranslate error (attempt ${attempts + 1}):`,
-                err
-              );
-            }
-            attempts++;
-            if (!translatedText)
-              await new Promise((res) => setTimeout(res, 500)); // wait before retry
-          }
 
-          translatedCaptions.push({
-            ...segment,
-
-            text:
-              translatedText && translatedText.trim()
-                ? translatedText
-                : segment.text,
-            _originalText: segment.text,
-          });
-        }
-      } catch (err) {
-        logger.error("LibreTranslate error:", err);
-        translatedCaptions = result.captions.map((s) => ({
-          ...s,
-          text: s.text,
-          _originalText: s.text,
-        }));
-      }
+    if (translate) {
+      translatedCaptions = (result.captions || []).map((s) => ({
+        ...s,
+        _originalText: s._originalText || s.text,
+        text: s.text,
+      }));
     } else {
       translatedCaptions = (result.captions || []).map((s) => ({
         ...s,
