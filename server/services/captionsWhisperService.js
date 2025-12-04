@@ -85,12 +85,8 @@ export async function transcribeAudio(fileOrBuffer, language = null, translate =
     }
 
     const outputPath = await convertToWavFile(fileOrBuffer);
-    const wavStream = fs.createReadStream(outputPath);
-
-    const form = new FormData();
-    form.append('audio', wavStream, { filename: 'audio.wav', contentType: 'audio/wav' });
-    if (language) form.append('language', language);
-    form.append('translate', translate ? 'true' : 'false');
+    // read the wav into a buffer so we can recreate streams for retries
+    const wavBuffer = await fs.promises.readFile(outputPath);
 
     async function sleep(ms) {
       return new Promise((res) => setTimeout(res, ms));
@@ -120,6 +116,12 @@ export async function transcribeAudio(fileOrBuffer, language = null, translate =
 
     async function sendWithRetries(attempt = 0) {
       try {
+        const form = new FormData();
+        const wavStream = Readable.from(wavBuffer);
+        form.append('audio', wavStream, { filename: 'audio.wav', contentType: 'audio/wav' });
+        if (language) form.append('language', language);
+        form.append('translate', translate ? 'true' : 'false');
+
         const headers = Object.assign({}, form.getHeaders());
         headers['User-Agent'] = headers['User-Agent'] || 'wwc-captions-service/1.0';
 
@@ -135,8 +137,9 @@ export async function transcribeAudio(fileOrBuffer, language = null, translate =
           e.responseBody = typeof resp.data === 'string' ? resp.data.slice(0, 1024) : resp.data;
           throw e;
         }
+
         return resp;
-      } catch (err) {   
+      } catch (err) {
         const status = err && err.response ? err.response.status : null;
         if (status === 429 && attempt < MAX_RETRIES) {
           const header = err.response && err.response.headers ? err.response.headers['retry-after'] || err.response.headers['Retry-After'] : null;
