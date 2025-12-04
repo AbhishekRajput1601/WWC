@@ -51,7 +51,7 @@ export const transcribeAudioHandler = async (req, res) => {
           while (attempts < 3 && !translatedText) {
             try {
               const translationRes = await axios.post(
-                "https://libretranslate.de/translate",
+                process.env.LIBRETRANSLATE_URL || "https://libretranslate.de/translate",
                 {
                   q: segment.text,
                   source: sourceLang,

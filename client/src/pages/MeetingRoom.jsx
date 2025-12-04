@@ -196,9 +196,24 @@ const MeetingRoom = () => {
   }, [showCaptions, mediaStream, selectedLanguage]);
 
   const screenStreamRef = useRef(null);
+  const supportsDisplayMedia = () => {
+    try {
+      return !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
+    } catch (e) {
+      return false;
+    }
+  };
+
   const toggleScreenShare = async () => {
     if (!isScreenSharing) {
       try {
+        if (!supportsDisplayMedia()) {
+          alert(
+            "Screen sharing is not supported on this device or browser. Try using a desktop browser."
+          );
+          return;
+        }
+
         const screenStream = await navigator.mediaDevices.getDisplayMedia({
           video: true,
         });
@@ -516,16 +531,31 @@ const MeetingRoom = () => {
     if (!mediaStream) return alert("No media stream (microphone) available");
     (async () => {
       try {
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({
-          video: true,
-        });
+        // Try to capture the screen if supported. If not, fall back to camera video.
+        let screenStream = null;
+        if (supportsDisplayMedia()) {
+          try {
+            screenStream = await navigator.mediaDevices.getDisplayMedia({
+              video: true,
+            });
+          } catch (e) {
+            // user may have canceled screen share prompt; we'll fall back
+            screenStream = null;
+            console.warn("Screen capture not started, falling back to camera", e);
+          }
+        }
 
         const mixedStream = new MediaStream();
-        screenStream.getVideoTracks().forEach((t) => mixedStream.addTrack(t));
-        if (
-          mediaStream.getAudioTracks &&
-          mediaStream.getAudioTracks().length > 0
-        ) {
+
+        // Prefer screen stream's video track, otherwise use the existing camera video
+        if (screenStream && screenStream.getVideoTracks().length > 0) {
+          screenStream.getVideoTracks().forEach((t) => mixedStream.addTrack(t));
+        } else if (mediaStream && mediaStream.getVideoTracks().length > 0) {
+          mediaStream.getVideoTracks().forEach((t) => mixedStream.addTrack(t));
+        }
+
+        // Always attach audio tracks from the user's media stream when available
+        if (mediaStream.getAudioTracks && mediaStream.getAudioTracks().length > 0) {
           mediaStream.getAudioTracks().forEach((t) => mixedStream.addTrack(t));
         }
 
@@ -577,16 +607,18 @@ const MeetingRoom = () => {
           }
         };
 
-        const screenTrack = screenStream.getVideoTracks()[0];
-        if (screenTrack) {
-          screenTrack.addEventListener("ended", () => {
-            try {
-              const wrapped = mediaRecorderRefForRecording.current;
-              const rr =
-                wrapped && wrapped.recorder ? wrapped.recorder : wrapped;
-              if (rr && rr.state !== "inactive") rr.stop();
-            } catch (e) {}
-          });
+        if (screenStream) {
+          const screenTrack = screenStream.getVideoTracks()[0];
+          if (screenTrack) {
+            screenTrack.addEventListener("ended", () => {
+              try {
+                const wrapped = mediaRecorderRefForRecording.current;
+                const rr =
+                  wrapped && wrapped.recorder ? wrapped.recorder : wrapped;
+                if (rr && rr.state !== "inactive") rr.stop();
+              } catch (e) {}
+            });
+          }
         }
 
         mr.start(1000);
