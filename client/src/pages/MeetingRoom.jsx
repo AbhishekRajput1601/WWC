@@ -53,6 +53,7 @@ const MeetingRoom = () => {
   const [meetingEnded, setMeetingEnded] = useState(false);
   const [endMeetingError, setEndMeetingError] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const [isUploadingRecording, setIsUploadingRecording] = useState(false);
   const mediaRecorderRefForRecording = useRef(null);
   const recordedChunksRef = useRef([]);
 
@@ -199,6 +200,15 @@ const MeetingRoom = () => {
   const supportsDisplayMedia = () => {
     try {
       return !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const isMobileDevice = () => {
+    try {
+      const ua = navigator.userAgent || navigator.vendor || window.opera || '';
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua);
     } catch (e) {
       return false;
     }
@@ -388,7 +398,6 @@ const MeetingRoom = () => {
           sock.emit("answer", { answer, targetSocketId: fromSocketId });
         });
 
-        // Answer
         sock.on("answer", async ({ answer, fromSocketId }) => {
           if (peerConnections.current[fromSocketId]) {
             await peerConnections.current[fromSocketId].setRemoteDescription(
@@ -462,7 +471,6 @@ const MeetingRoom = () => {
     socket.on("user-started-screen-share", onStart);
     socket.on("user-stopped-screen-share", onStop);
 
-    // handle meeting ended by host
     const onMeetingEnded = ({ meetingId: mid, reason }) => {
       console.log("Meeting ended event received", mid, reason);
       setMeetingEnded(true);
@@ -515,8 +523,6 @@ const MeetingRoom = () => {
     }
     return hostId && String(hostId) === userId;
   })();
-
-  // compute hostId for child components (string or null)
   const hostId = (() => {
     if (!meeting) return null;
     if (meeting.host) {
@@ -531,23 +537,36 @@ const MeetingRoom = () => {
     if (!mediaStream) return alert("No media stream (microphone) available");
     (async () => {
       try {
-        // Try to capture the screen if supported. If not, fall back to camera video.
         let screenStream = null;
-        if (supportsDisplayMedia()) {
+        const isMobile = isMobileDevice();
+        if (isMobile) {
+          if (!supportsDisplayMedia()) {
+            alert(
+              "Screen recording is not supported on this mobile browser. Please use a browser that supports screen capture or use a desktop."
+            );
+            return;
+          }
           try {
-            screenStream = await navigator.mediaDevices.getDisplayMedia({
-              video: true,
-            });
+            screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
           } catch (e) {
-            // user may have canceled screen share prompt; we'll fall back
-            screenStream = null;
-            console.warn("Screen capture not started, falling back to camera", e);
+            console.warn("Screen capture not started on mobile", e);
+            alert("Screen recording was not started. Please allow screen capture or try again.");
+            return;
+          }
+        } else {
+          if (supportsDisplayMedia()) {
+            try {
+              screenStream = await navigator.mediaDevices.getDisplayMedia({
+                video: true,
+              });
+            } catch (e) {
+              screenStream = null;
+              console.warn("Screen capture not started, falling back to camera", e);
+            }
           }
         }
 
         const mixedStream = new MediaStream();
-
-        // Prefer screen stream's video track, otherwise use the existing camera video
         if (screenStream && screenStream.getVideoTracks().length > 0) {
           screenStream.getVideoTracks().forEach((t) => mixedStream.addTrack(t));
         } else if (mediaStream && mediaStream.getVideoTracks().length > 0) {
@@ -576,11 +595,16 @@ const MeetingRoom = () => {
           if (e.data && e.data.size > 0) recordedChunksRef.current.push(e.data);
         };
 
-        mr.onstart = () => setIsRecording(true);
+        mr.onstart = () => {
+          setIsRecording(true);
+          setIsRecordingLocal(true);
+          setRecordingStartTime(Date.now());
+        };
 
         mr.onstop = async () => {
           setIsRecording(false);
-          // stop screen tracks
+          setIsRecordingLocal(false);
+          setRecordingStartTime(null);
           try {
             screenStream.getTracks().forEach((t) => t.stop());
           } catch (e) {}
@@ -591,6 +615,7 @@ const MeetingRoom = () => {
           recordedChunksRef.current = [];
 
           try {
+            setIsUploadingRecording(true);
             const uploadRes = await meetingService.uploadRecording(
               meetingId,
               blob
@@ -601,9 +626,13 @@ const MeetingRoom = () => {
               if (m.success) setMeeting(m.meeting);
             } else {
               console.error("Failed to upload recording:", uploadRes.message);
+              alert("Failed to upload recording: " + (uploadRes.message || ""));
             }
           } catch (err) {
             console.error("Upload error", err);
+            alert("Upload error: " + (err.message || err));
+          } finally {
+            setIsUploadingRecording(false);
           }
         };
 
@@ -629,6 +658,39 @@ const MeetingRoom = () => {
     })();
   };
 
+    const [showRecordConfirm, setShowRecordConfirm] = useState(false);
+    const [isRecordingLocal, setIsRecordingLocal] = useState(false);
+    const [recordingStartTime, setRecordingStartTime] = useState(null);
+    const timerIntervalRef = useRef(null);
+    const [recordingElapsed, setRecordingElapsed] = useState(0);
+
+    const handleStartRecordingClick = () => {
+      if (isRecording) return;
+      setShowRecordConfirm(true);
+    };
+
+    const formatElapsed = (secs) => {
+      const s = Math.floor(secs % 60).toString().padStart(2, '0');
+      const m = Math.floor((secs / 60) % 60).toString().padStart(2, '0');
+      const h = Math.floor(secs / 3600).toString().padStart(2, '0');
+      return `${h}:${m}:${s}`;
+    };
+
+    useEffect(() => {
+      if (isRecordingLocal && recordingStartTime) {
+        setRecordingElapsed(Math.floor((Date.now() - recordingStartTime) / 1000));
+        timerIntervalRef.current = setInterval(() => {
+          setRecordingElapsed(Math.floor((Date.now() - recordingStartTime) / 1000));
+        }, 1000);
+      }
+      return () => {
+        if (timerIntervalRef.current) {
+          clearInterval(timerIntervalRef.current);
+          timerIntervalRef.current = null;
+        }
+      };
+    }, [isRecordingLocal, recordingStartTime]);
+
   const stopRecording = () => {
     const wrapped = mediaRecorderRefForRecording.current;
     if (!wrapped) return;
@@ -641,7 +703,7 @@ const MeetingRoom = () => {
     const rtcConfig = iceServers.current || {
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     };
-    // Add low-latency optimizations
+
     rtcConfig.sdpSemantics = 'unified-plan';
     rtcConfig.bundlePolicy = 'max-bundle';
     rtcConfig.rtcpMuxPolicy = 'require';
@@ -809,11 +871,29 @@ const MeetingRoom = () => {
             user={user}
             isMuted={isMuted}
             participants={participants}
+            setActivePanel={setActivePanel}
           />
         </div>
       </div>
 
-      {/* Control Bar */}
+        {isUploadingRecording && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+            <div className="bg-black/60 backdrop-blur-sm rounded-lg p-4 flex items-center space-x-3 pointer-events-auto">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
+              <div className="text-white font-medium">Uploading recording...</div>
+            </div>
+          </div>
+        )}
+
+        {isRecordingLocal && (
+          <div className="fixed top-4 right-4 z-[9998]">
+            <div className="bg-black/75 text-white px-3 py-1 rounded-lg shadow-md font-mono text-sm">
+              Recording {formatElapsed(recordingElapsed)}
+            </div>
+          </div>
+        )}
+
+        {/* Control Bar */}
       <MeetingControls
         isMuted={isMuted}
         isVideoOn={isVideoOn}
@@ -830,8 +910,9 @@ const MeetingRoom = () => {
         handleEndMeeting={handleEndMeeting}
         isCreator={isCreator}
         isRecording={isRecording}
-        onStartRecording={startRecording}
+        onStartRecording={handleStartRecordingClick}
         onStopRecording={stopRecording}
+        isUploadingRecording={isUploadingRecording}
         activePanel={activePanel}
         setActivePanel={setActivePanel}
         mediaStream={mediaStream}
@@ -840,6 +921,32 @@ const MeetingRoom = () => {
         user={user}
         meetingId={meetingId}
       />
+      {/* Confirmation modal for recording start */}
+      {showRecordConfirm && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 pointer-events-auto" role="dialog" aria-modal="true">
+          <div className="bg-white rounded-lg p-4 max-w-sm w-full mx-4 pointer-events-auto">
+            <h3 className="text-lg font-semibold mb-2">Start Recording</h3>
+            <p className="text-sm text-neutral-700 mb-4">Are you sure you want to record the meeting?</p>
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setShowRecordConfirm(false)}
+                className="px-3 py-1 rounded-md border border-neutral-300"
+              >
+                No
+              </button>
+              <button
+                onClick={() => {
+                  setShowRecordConfirm(false);
+                try { startRecording(); } catch (e) { console.error(e); }
+                }}
+                className="px-3 py-1 rounded-md bg-wwc-600 text-white"
+              >
+                Yes, start
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

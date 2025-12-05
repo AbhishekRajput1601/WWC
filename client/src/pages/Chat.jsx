@@ -2,7 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-const Chat = ({ socket: externalSocket }) => {
+const Chat = ({ socket: externalSocket, onClose }) => {
+  const [visible, setVisible] = useState(true);
+  const rootRef = useRef(null);
+
+  const handleClose = () => {
+    if (onClose) onClose();
+    else setVisible(false);
+  };
   const { meetingId } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -121,38 +128,46 @@ const Chat = ({ socket: externalSocket }) => {
   };
 
   const handleDeleteMessage = (id) => {
-    setMessages((prev) => prev.filter((m) => m.id !== id));
-    if (externalSocket) {
-      externalSocket.emit("delete-chat-message", { id });
-    }
+    // delete message removed — function kept intentionally empty in case
+    // other code expects it; actual delete UI has been removed.
   };
 
   const goBackToMeeting = () => {
     navigate(`/meeting/${meetingId}`);
   };
 
+  if (!visible) return null;
+
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-wwc-50 via-white to-accent-50 flex items-center justify-center">
-        <div className="text-center animate-fade-in">
-          <div className="mx-auto w-20 h-20 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-3xl flex items-center justify-center shadow-hard mb-6">
-            <div className="animate-pulse-soft">
-              <span className="text-white font-bold text-2xl font-display">
-                W
-              </span>
-            </div>
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-end p-4">
+        <div className="absolute inset-0 bg-black/40" onClick={handleClose} />
+        <div ref={rootRef} className="pointer-events-auto z-50 w-full sm:w-[340px] md:w-[380px] h-[500px] sm:h-[580px] md:h-[620px] max-h-[calc(100vh-120px)] bg-white border-2 border-black rounded-xl sm:rounded-2xl shadow-2xl flex items-center justify-center overflow-hidden">
+          <div className="absolute top-3 right-3">
+            <button onClick={handleClose} aria-label="Close chat" className="p-1 rounded-md bg-white/20 hover:bg-white/30 text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
           </div>
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wwc-500 mx-auto mb-4"></div>
-          <p className="text-neutral-900 font-semibold text-lg">
-            Loading Chat...
-          </p>
+          <div className="text-center animate-fade-in w-full">
+            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-wwc-600 to-wwc-700 rounded-3xl flex items-center justify-center shadow-hard mb-6">
+              <div className="animate-pulse-soft">
+                <span className="text-white font-bold text-2xl font-display">W</span>
+              </div>
+            </div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wwc-500 mx-auto mb-4"></div>
+            <p className="text-neutral-900 font-semibold text-lg">Loading Chat...</p>
+          </div>
         </div>
-      </div>
+        </div>
     );
   }
 
   return (
-    <div className="w-full sm:w-[340px] md:w-[380px] h-[500px] sm:h-[580px] md:h-[620px] max-h-[calc(100vh-120px)] bg-white border-2 border-black rounded-xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden mb-4 sm:mb-12 md:mb-20 mt-2 mr-0 sm:mr-3 md:mr-5">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-end p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={handleClose} />
+      <div ref={rootRef} className="pointer-events-auto z-50 w-full sm:w-[340px] md:w-[380px] h-[500px] sm:h-[580px] md:h-[620px] max-h-[calc(100vh-120px)] bg-white border-2 border-black rounded-xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden mb-16">
       {/* Header */}
       <div className="p-3 sm:p-4 border-b-2 border-black bg-gradient-to-r from-wwc-600 to-wwc-700 text-white flex items-center justify-between">
         <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
@@ -167,6 +182,9 @@ const Chat = ({ socket: externalSocket }) => {
             className="px-2.5 sm:px-3 py-1 rounded-lg bg-white/20 text-white text-xs sm:text-sm hover:bg-white/30"
           >
             Top
+          </button>
+          <button onClick={handleClose} aria-label="Close chat" className="px-2.5 sm:px-3 py-1 rounded-lg bg-white/20 text-white text-xs sm:text-sm hover:bg-white/30">
+            ✕
           </button>
         </div>
       </div>
@@ -231,28 +249,6 @@ const Chat = ({ socket: externalSocket }) => {
                         {message.timestamp}
                       </p>
                     </div>
-                    {isOwn && (
-                      <button
-                        onClick={() => handleDeleteMessage(message.id)}
-                        title="Delete message"
-                        className="ml-1.5 sm:ml-2 text-neutral-500 hover:text-red-500 flex-shrink-0"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-3.5 w-3.5 sm:h-4 sm:w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
-                      </button>
-                    )}
                   </div>
                   <div
                     className={`${
@@ -323,6 +319,7 @@ const Chat = ({ socket: externalSocket }) => {
         </form>
       </div>
     </div>
+  </div>
   );
 };
 

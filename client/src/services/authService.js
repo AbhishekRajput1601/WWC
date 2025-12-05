@@ -18,7 +18,7 @@ class AuthService {
     try {
       const response = await api.post('/auth/register', userData);
       if (response.data.success && response.data.token) {
-        localStorage.setItem('token', response.data.token);
+        sessionStorage.setItem('token', response.data.token);
         api.setAuthToken(response.data.token);
       }
       
@@ -37,7 +37,7 @@ class AuthService {
     try {
       const response = await api.post('/auth/login', credentials);
       if (response.data.success && response.data.token) {
-        localStorage.setItem('token', response.data.token);
+        sessionStorage.setItem('token', response.data.token);
         api.setAuthToken(response.data.token);
       }
       
@@ -59,7 +59,7 @@ class AuthService {
   async logout() {
     try {
       await api.post('/auth/logout');
-      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
       api.setAuthToken(null);
       
       return {
@@ -67,7 +67,7 @@ class AuthService {
         message: 'Logged out successfully'
       };
     } catch (error) {
-      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
       api.setAuthToken(null);
       
       return {
@@ -114,12 +114,12 @@ class AuthService {
   }
 
   isAuthenticated() {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     return !!token;
   }
 
   getToken() {
-    return localStorage.getItem('token');
+    return sessionStorage.getItem('token');
   }
 }
 

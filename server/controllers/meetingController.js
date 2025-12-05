@@ -406,8 +406,10 @@ export const uploadRecording = async (req, res) => {
     }
 
     
-    if (meeting.host.toString() !== req.user.id) {
-      return res.status(403).json({ success: false, message: 'Only the meeting host can upload recordings' });
+    const isHost = meeting.host && meeting.host.toString() === req.user.id;
+    const isParticipant = (meeting.participants || []).some(p => p.user && p.user.toString() === req.user.id);
+    if (!isHost && !isParticipant && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Not authorized to upload recordings for this meeting' });
     }
 
     const file = req.file;
@@ -547,7 +549,21 @@ export const getRecordings = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Meeting not found' });
     }
 
-    return res.json({ success: true, recordings: meeting.recordings || [] });
+    // Only return recordings uploaded by the requesting user
+    const allRecs = meeting.recordings || [];
+    const userId = req.user.id;
+    const owned = allRecs.filter(r => {
+      if (!r) return false;
+      const ub = r.uploadedBy;
+      if (!ub) return false;
+      // ub may be populated object or an ObjectId
+      if (typeof ub === 'string') return ub === userId;
+      if (ub._id) return ub._id.toString() === userId;
+      if (ub.toString) return ub.toString() === userId;
+      return false;
+    });
+
+    return res.json({ success: true, recordings: owned });
   } catch (error) {
     logger.error('Get recordings error:', error);
     return res.status(500).json({ success: false, message: 'Server error fetching recordings' });
@@ -594,6 +610,20 @@ export const getRecording = async (req, res) => {
     const rec = meeting.recordings.id(recordingId);
     if (!rec || !rec.public_id) {
       return res.status(404).json({ success: false, message: 'Recording not found' });
+    }
+
+    // Ensure only the uploader can access this recording
+    const ub = rec.uploadedBy;
+    const userId = req.user.id;
+    let isOwner = false;
+    if (ub) {
+      if (typeof ub === 'string') isOwner = ub === userId;
+      else if (ub._id) isOwner = ub._id.toString() === userId;
+      else if (ub.toString) isOwner = ub.toString() === userId;
+    }
+
+    if (!isOwner) {
+      return res.status(403).json({ success: false, message: 'Not authorized to view this recording' });
     }
 
     return res.json({ success: true, recording: rec });

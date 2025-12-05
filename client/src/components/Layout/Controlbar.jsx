@@ -19,6 +19,7 @@ const Controlbar = ({
   isRecording,
   onStartRecording,
   onStopRecording,
+  isUploadingRecording,
   activePanel,
   setActivePanel,
   mediaStream,
@@ -190,22 +191,22 @@ const Controlbar = ({
               className="px-1.5 py-1 rounded-md border-2 border-wwc-700 bg-white text-wwc-700 focus:outline-none focus:ring-2 focus:ring-wwc-500 transition-all duration-200 text-[10px] font-medium"
               title="Select Language"
             >
-              <option value="en">EN</option>
-              <option value="es">ES</option>
-              <option value="fr">FR</option>
-              <option value="de">DE</option>
-              <option value="zh">ZH</option>
-              <option value="ja">JA</option>
-              <option value="ru">RU</option>
-              <option value="hi">HI</option>
-              <option value="ta">TA</option>
-              <option value="bn">BN</option>
-              <option value="te">TE</option>
-              <option value="ml">ML</option>
-              <option value="kn">KN</option>
-              <option value="pa">PA</option>
-              <option value="gu">GU</option>
-              <option value="mr">MR</option>
+              <option value="en">English</option>
+              <option value="es">Spanish</option>
+              <option value="fr">French</option>
+              <option value="de">German</option>
+              <option value="zh">Chinese</option>
+              <option value="ja">Japanese</option>
+              <option value="ru">Russian</option>
+              <option value="hi">Hindi</option>
+              <option value="ta">Tamil</option>
+              <option value="bn">Bengali</option>
+              <option value="te">Telugu</option>
+              <option value="ml">Malayalam</option>
+              <option value="kn">Kannada</option>
+              <option value="pa">Punjabi</option>
+              <option value="gu">Gujarati</option>
+              <option value="mr">Marathi</option>
             </select>
 
             {/* Screen Share */}
@@ -245,16 +246,20 @@ const Controlbar = ({
             {/* Record */}
             <button
               onClick={() => {
+                if (isUploadingRecording) return;
                 if (isRecording) onStopRecording();
                 else onStartRecording();
                 setShowMoreMenu(false);
               }}
+              disabled={isUploadingRecording}
               className={`p-1.5 rounded-md font-medium transition-all duration-200 border-2 border-wwc-700 flex items-center justify-center ${
-                isRecording
+                isUploadingRecording
+                  ? 'opacity-60 pointer-events-none bg-white text-wwc-400'
+                  : isRecording
                   ? "bg-gradient-to-br from-red-600 to-red-700 text-white"
                   : "bg-white text-wwc-700 hover:bg-wwc-50"
               }`}
-              title={isRecording ? "Stop Recording" : "Start Recording"}
+              title={isUploadingRecording ? "Uploading..." : (isRecording ? "Stop Recording" : "Start Recording")}
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                 <circle cx="12" cy="12" r="6" />

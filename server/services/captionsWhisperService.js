@@ -12,7 +12,6 @@ ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 const WHISPER_URL = process.env.WHISPER_URL || 'http://localhost:5001/transcribe';
 
-
 async function convertToWavFile(fileOrBuffer) {
   const tmpDir = os.tmpdir();
   const id = crypto.randomBytes(8).toString('hex');
@@ -85,7 +84,6 @@ export async function transcribeAudio(fileOrBuffer, language = null, translate =
     }
 
     const outputPath = await convertToWavFile(fileOrBuffer);
-    // read the wav into a buffer so we can recreate streams for retries
     const wavBuffer = await fs.promises.readFile(outputPath);
 
     async function sleep(ms) {

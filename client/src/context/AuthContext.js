@@ -5,8 +5,8 @@ const AuthContext = createContext();
 
 const initialState = {
   user: null,
-  token: authService.getToken(),
-  isAuthenticated: authService.isAuthenticated(),
+    token: authService.getToken(),
+    isAuthenticated: authService.isAuthenticated(),
   loading: true,
   error: null,
 };
@@ -23,7 +23,7 @@ const authReducer = (state, action) => {
       };
     case 'LOGIN_SUCCESS':
     case 'REGISTER_SUCCESS':
-      localStorage.setItem('token', action.payload.token);
+      sessionStorage.setItem('token', action.payload.token);
       return {
         ...state,
         token: action.payload.token,
@@ -36,7 +36,7 @@ const authReducer = (state, action) => {
     case 'LOGIN_FAIL':
     case 'REGISTER_FAIL':
     case 'LOGOUT':
-      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
       return {
         ...state,
         token: null,
