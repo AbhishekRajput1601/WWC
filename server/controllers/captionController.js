@@ -33,6 +33,7 @@ export const transcribeAudioHandler = async (req, res) => {
       }
     }
     const speaker = req.user?._id;
+    const speakerName = req.user?.name || 'Unknown';
 
     const result = await transcribeAudio(
       audioFile.buffer,
@@ -65,6 +66,7 @@ export const transcribeAudioHandler = async (req, res) => {
       logger.warn("No speaker (user) found, captions will not be saved.");
     }
 
+    // apply basic filtering: non-empty and not too short
     const filteredCaptions = (translatedCaptions || []).filter(
       (seg) => seg.text && seg.text.trim().length > 2
     );
@@ -82,12 +84,29 @@ export const transcribeAudioHandler = async (req, res) => {
     for (const segment of filteredCaptions) {
       if (!meetingId || !speaker) continue;
       try {
+        const text = (segment.text || '').toString().trim();
+        if (!text) continue;
+
+        const conf = typeof segment.confidence === 'number' ? segment.confidence : null;
+        const letters = (text.match(/[A-Za-zÀ-ÖØ-öø-ÿ]/g) || []).length;
+        const alphaRatio = letters / Math.max(1, text.length);
+        const MIN_CONFIDENCE = 0.6;
+        const MIN_LETTERS = 2;
+        const MIN_ALPHA_RATIO = 0.4;
+        const passesConfidence = conf === null ? true : conf >= MIN_CONFIDENCE;
+        const passesGibberish = letters >= MIN_LETTERS && alphaRatio >= MIN_ALPHA_RATIO;
+        if (!passesConfidence || !passesGibberish) {
+          logger.debug('Rejected uploaded caption (low confidence or gibberish)', { text, confidence: conf, letters, alphaRatio });
+          continue;
+        }
+
         const entry = {
           speaker,
+          speakerName,
           originalText: segment._originalText || segment.text,
           originalLanguage: detectedLanguage || requestedLanguage || "en",
           translations: [],
-          confidence: segment.confidence || 0.8,
+          confidence: conf || 0.8,
           timestamp: segment.timestamp
             ? new Date(segment.timestamp)
             : new Date(),
@@ -200,7 +219,7 @@ export const exportCaptions = async (req, res) => {
         .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
         .forEach((caption) => {
           const time = new Date(caption.timestamp).toLocaleTimeString();
-          const speaker = caption.speaker ? caption.speaker.name : "Unknown";
+          const speaker = caption.speakerName || (caption.speaker ? caption.speaker.name : "Unknown");
 
           let text = caption.originalText;
           if (

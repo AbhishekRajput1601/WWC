@@ -6,22 +6,54 @@ import path from 'path';
 import crypto from 'crypto';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+import { fileTypeFromBuffer } from 'file-type';
 import { Readable } from 'stream';
 import stream from 'stream';
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 const WHISPER_URL = process.env.WHISPER_URL || 'http://localhost:5001/transcribe';
 
-async function convertToWavFile(fileOrBuffer) {
+async function convertToWavFile(fileOrBuffer, inputType = null) {
   const tmpDir = os.tmpdir();
   const id = crypto.randomBytes(8).toString('hex');
-  const inputPath = path.join(tmpDir, `whisper_input_${id}`);
+  // determine extension from inputType (mime) or detect from buffer
+  let ext = '';
+  let detected = null;
+
+  // if we have a provided inputType (mime), map common types
+  if (inputType) {
+    const t = inputType.toLowerCase();
+    if (t.includes('webm')) ext = '.webm';
+    else if (t.includes('ogg')) ext = '.ogg';
+    else if (t.includes('wav')) ext = '.wav';
+    else if (t.includes('mp3')) ext = '.mp3';
+    else if (t.includes('mp4')) ext = '.mp4';
+  }
+
+  const inputPathBase = path.join(tmpDir, `whisper_input_${id}`);
   const outputPath = path.join(tmpDir, `whisper_output_${id}.wav`);
 
   if (Buffer.isBuffer(fileOrBuffer)) {
+    // try to detect file type from buffer if ext not determined
+    try {
+      const ft = await fileTypeFromBuffer(fileOrBuffer);
+      if (ft && ft.ext) {
+        detected = ft;
+        if (!ext) ext = `.${ft.ext}`;
+      }
+    } catch (e) {
+      // detection failed; continue with provided ext or default
+      console.debug('FileType detection failed:', e && e.message ? e.message : e);
+    }
+
+    if (!ext) ext = '.webm';
+    const inputPath = `${inputPathBase}${ext}`;
     await fs.promises.writeFile(inputPath, fileOrBuffer);
   } else if (typeof fileOrBuffer === 'string') {
     if (await fs.promises.stat(fileOrBuffer).then(() => true).catch(() => false)) {
+      // copy to a temp path keeping existing extension if possible
+      const srcExt = path.extname(fileOrBuffer) || '.wav';
+      const inputPath = `${inputPathBase}${srcExt}`;
       await fs.promises.copyFile(fileOrBuffer, inputPath);
     } else {
       throw new Error('Input file path does not exist: ' + fileOrBuffer);
@@ -29,24 +61,77 @@ async function convertToWavFile(fileOrBuffer) {
   } else {
     throw new Error('Invalid input to convertToWavFile, expected Buffer or file path');
   }
+  // find the actual inputPath we wrote
+  const inputPath = `${inputPathBase}${ext}`;
 
   return new Promise((resolve, reject) => {
-    ffmpeg(inputPath)
-      .outputOptions(['-ac 1', '-ar 16000', '-acodec pcm_s16le'])
-      .on('error', async (err) => {
-        try {
-          await fs.promises.unlink(inputPath).catch(() => {});
-          await fs.promises.unlink(outputPath).catch(() => {});
-        } catch (e) {}
-        reject(err);
-      })
-      .on('end', async () => {
+    console.debug('convertToWavFile: running ffmpeg on', inputPath, 'detected=', detected ? detected.mime : null);
+
+    const tryFfmpeg = (fileToConvert) => {
+      return new Promise((res, rej) => {
+        ffmpeg(fileToConvert)
+          .outputOptions(['-ac 1', '-ar 16000', '-acodec pcm_s16le'])
+          .on('error', async (err) => {
+            rej(err);
+          })
+          .on('end', async () => {
+            res(outputPath);
+          })
+          .save(outputPath);
+      });
+    };
+
+    (async () => {
+      try {
+        // first attempt
+        await tryFfmpeg(inputPath);
         try {
           await fs.promises.unlink(inputPath).catch(() => {});
         } catch (e) {}
         resolve(outputPath);
-      })
-      .save(outputPath);
+        return;
+      } catch (firstErr) {
+        console.error('ffmpeg conversion error for', inputPath, firstErr && firstErr.message ? firstErr.message : firstErr);
+        // if we have the original buffer, attempt alternative extensions
+        if (Buffer.isBuffer(fileOrBuffer)) {
+          const altExts = ['.webm', '.ogg', '.mp3', '.wav', '.m4a'];
+          // ensure current ext is tried first was already, now try others
+          const tried = new Set([ext]);
+          for (const alt of altExts) {
+            if (tried.has(alt)) continue;
+            const altInput = `${inputPathBase}${alt}`;
+            try {
+              await fs.promises.writeFile(altInput, fileOrBuffer);
+              try {
+                await tryFfmpeg(altInput);
+                // success
+                try {
+                  await fs.promises.unlink(altInput).catch(() => {});
+                } catch (e) {}
+                // cleanup original
+                try { await fs.promises.unlink(inputPath).catch(() => {}); } catch (e) {}
+                resolve(outputPath);
+                return;
+              } catch (altErr) {
+                console.error('ffmpeg conversion error for alt input', altInput, altErr && altErr.message ? altErr.message : altErr);
+                try { await fs.promises.unlink(altInput).catch(() => {}); } catch (e) {}
+                tried.add(alt);
+                continue;
+              }
+            } catch (writeErr) {
+              console.debug('Failed to write alt input file', altInput, writeErr && writeErr.message ? writeErr.message : writeErr);
+            }
+          }
+        }
+
+        // nothing worked
+        try {
+          await fs.promises.unlink(inputPath).catch(() => {});
+          await fs.promises.unlink(outputPath).catch(() => {});
+        } catch (e) {}
+        reject(firstErr);
+      }
+    })();
   });
 }
 
@@ -72,7 +157,7 @@ function releaseSlot() {
   }
 }
 
-export async function transcribeAudio(fileOrBuffer, language = null, translate = false) {
+export async function transcribeAudio(fileOrBuffer, language = null, translate = false, inputType = null) {
   await acquireSlot();
 
   try {
@@ -83,7 +168,7 @@ export async function transcribeAudio(fileOrBuffer, language = null, translate =
       console.error('Error logging memory usage:', e);
     }
 
-    const outputPath = await convertToWavFile(fileOrBuffer);
+    const outputPath = await convertToWavFile(fileOrBuffer, inputType);
     const wavBuffer = await fs.promises.readFile(outputPath);
 
     async function sleep(ms) {

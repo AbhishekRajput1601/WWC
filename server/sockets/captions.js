@@ -1,5 +1,7 @@
 import Caption from "../models/Caption.js";
 import logger from "../utils/logger.js";
+import { transcribeAudio } from "../services/captionsWhisperService.js";
+import { getSocketUser, setSocketUser } from '../utils/socketMap.js';
 
 export const setupCaptions = (io) => {
   io.on("connection", (socket) => {
@@ -18,38 +20,117 @@ export const setupCaptions = (io) => {
 
     socket.on(
       "audio-data",
-      async ({ meetingId, audioData, userId, language = "en" }) => {
+      async ({ meetingId, audioData, userId, userName = null, language = "en", translate = false, mimeType = null }) => {
         try {
-          const mockTranscription = await simulateTranscription(audioData);
+          if (!meetingId || !audioData) return;
 
-          if (mockTranscription && mockTranscription.text) {
-      
+          // map socketId -> user (ensure correct speaker attribution regardless of client-supplied userId)
+          let user = getSocketUser(socket.id);
+
+          // Debug: log incoming audio-data payload and current mapping
+          try {
+            logger.debug('audio-data received', {
+              socketId: socket.id,
+              payloadUserId: userId,
+              payloadUserName: userName,
+              mappedUser: user,
+            });
+          } catch (e) {}
+
+          // If mapping hasn't been set yet (race between audio and join), populate it from payload when available
+          if (!user && (userId || userName)) {
+            try {
+              const newUser = { id: userId || null, name: userName || (userId ? `User-${userId}` : 'User') };
+              setSocketUser(socket.id, newUser);
+              user = getSocketUser(socket.id);
+              logger.debug('socket user mapping populated from audio-data payload', { socketId: socket.id, newUser });
+            } catch (e) {
+              logger.debug('Failed to set socket user from audio-data payload', e && e.message ? e.message : e);
+            }
+          }
+
+          const speakerName = (user && user.name) ? user.name : 'Unknown';
+          const speakerId = (user && user.id) ? user.id : null;
+
+          // audioData may be an ArrayBuffer (from browser) or Buffer
+          const buffer = Buffer.isBuffer(audioData)
+            ? audioData
+            : Buffer.from(audioData);
+
+          // Call the Whisper transcribe service
+          let result = null;
+          try {
+            result = await transcribeAudio(buffer, language, translate, mimeType);
+          } catch (e) {
+            logger.error('Whisper transcribe error (socket audio-data):', e && e.message ? e.message : e);
+            // fallback: do not crash, just return
+            return;
+          }
+
+          if (!result || !result.captions || !result.captions.length) {
+            return;
+          }
+
+          // filter and store only high-confidence, meaningful segments
+          for (const seg of result.captions) {
+            try {
+              const text = (seg.text || "").toString().trim();
+              if (!text) continue;
+
+              // confidence from model if provided
+              const conf = typeof seg.confidence === 'number' ? seg.confidence : null;
+
+              // simple gibberish filter: require at least 2 letters and alpha ratio
+              const letters = (text.match(/[A-Za-zÀ-ÖØ-öø-ÿ]/g) || []).length;
+              const alphaRatio = letters / Math.max(1, text.length);
+
+              const MIN_CONFIDENCE = 0.6;
+              const MIN_LETTERS = 2;
+              const MIN_ALPHA_RATIO = 0.4;
+
+              const passesConfidence = conf === null ? true : conf >= MIN_CONFIDENCE;
+              const passesGibberish = letters >= MIN_LETTERS && alphaRatio >= MIN_ALPHA_RATIO;
+
+              if (!passesConfidence || !passesGibberish) {
+                logger.debug('Rejected caption (low confidence or gibberish)', { text, confidence: conf, letters, alphaRatio });
+                continue;
+              }
+
               const entry = {
-                speaker: userId,
-                originalText: mockTranscription.text,
-                originalLanguage: language,
-                confidence: mockTranscription.confidence || 0.8,
-                isFinal: mockTranscription.isFinal || false,
+                speaker: speakerId || undefined,
+                speakerName: speakerName,
+                originalText: text,
+                originalLanguage: result.language || language || "en",
+                translations: [],
+                confidence: conf || 0.85,
                 timestamp: new Date(),
+                duration: (seg.end && seg.start) ? Math.max(0, seg.end - seg.start) : 0,
+                isFinal: true,
               };
+
               const updated = await Caption.findOneAndUpdate(
                 { meetingId },
                 { $push: { captions: entry } },
                 { upsert: true, new: true }
               );
+
               const appended = updated.captions && updated.captions.length ? updated.captions[updated.captions.length - 1] : null;
 
               io.to(meetingId).emit("new-caption", {
                 captionId: appended?._id || null,
-                text: mockTranscription.text,
-                speakerId: userId,
-                language,
-                confidence: mockTranscription.confidence,
-                isFinal: mockTranscription.isFinal,
+                text: text,
+                speakerId: speakerId || null,
+                speakerName: speakerName,
+                language: result.language || language || "en",
+                confidence: entry.confidence,
+                isFinal: entry.isFinal,
                 timestamp: appended ? appended.timestamp : entry.timestamp,
               });
 
               logger.debug(`Caption appended and broadcast for meeting ${meetingId}`);
+            } catch (err) {
+              logger.error('Error saving caption segment:', err);
+            }
           }
         } catch (error) {
           logger.error("Error processing audio data:", error);

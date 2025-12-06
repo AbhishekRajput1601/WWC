@@ -119,82 +119,197 @@ const MeetingRoom = () => {
     setShowCaptions((prev) => !prev);
   };
 
+  // Continuous background audio streaming to server (always active when joined)
   useEffect(() => {
-    let intervalId;
-    if (showCaptions && mediaStream) {
-      const audioStream = new MediaStream(mediaStream.getAudioTracks());
-      let mimeType = "";
-      if (MediaRecorder.isTypeSupported("audio/wav")) {
-        mimeType = "audio/wav";
-      } else if (MediaRecorder.isTypeSupported("audio/webm")) {
-        mimeType = "audio/webm";
-      } else {
-        mimeType = "";
-      }
-      const mediaRecorder = new window.MediaRecorder(
-        audioStream,
-        mimeType ? { mimeType } : undefined
-      );
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
+    let recorder = null;
+    let intervalId = null;
+    let audioCtx = null;
+    let source = null;
+    let processor = null;
 
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          audioChunksRef.current.push(e.data);
-        }
-      };
+    const useWavEncoding = true; // prefer WAV encoding via WebAudio
 
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, {
-          type: mimeType || "audio/webm",
+    const sendWavBuffer = async (float32Buffer, sampleRate) => {
+      // convert Float32Array to 16-bit PCM WAV
+      const buffer = encodeWAV(float32Buffer, sampleRate);
+      try {
+        socket.emit('audio-data', {
+          meetingId,
+          audioData: buffer.buffer,
+          mimeType: 'audio/wav',
+          userId: user?._id,
+          userName: user?.name || 'User',
+          language: selectedLanguage || 'en',
         });
-        console.log("Audio blob size:", audioBlob.size, "bytes");
-        audioChunksRef.current = [];
-        const formData = new FormData();
-        formData.append(
-          "audio",
-          audioBlob,
-          mimeType === "audio/wav" ? "audio.wav" : "audio.webm"
-        );
-        formData.append("language", selectedLanguage);
-        formData.append(
-          "translate",
-          selectedLanguage !== "en" ? "true" : "false"
-        );
-        formData.append("meetingId", meetingId);
-        try {
-          const res = await api.post(`/whisper/transcribe`, formData);
-          if (res.data && res.data.captions && res.data.captions.length > 0) {
-            setCurrentCaption(
-              res.data.captions[res.data.captions.length - 1].text
-            );
-          } else {
-            setCurrentCaption("");
-          }
-        } catch (err) {
-          setCurrentCaption("");
-          console.error("Caption error:", err);
-        }
-      };
-
-      mediaRecorder.start();
-      intervalId = setInterval(() => {
-        if (mediaRecorder.state === "recording") {
-          mediaRecorder.stop();
-          mediaRecorder.start();
-        }
-      }, 2000);
-    }
-    return () => {
-      if (
-        mediaRecorderRef.current &&
-        mediaRecorderRef.current.state !== "inactive"
-      ) {
-        mediaRecorderRef.current.stop();
+      } catch (err) {
+        console.error('Failed to send WAV buffer:', err);
       }
-      clearInterval(intervalId);
     };
-  }, [showCaptions, mediaStream, selectedLanguage]);
+
+    if (mediaStream && socket) {
+      try {
+        // Try WebAudio capture + WAV encoding first
+        if (useWavEncoding && (window.AudioContext || window.webkitAudioContext)) {
+          try {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AC();
+            source = audioCtx.createMediaStreamSource(mediaStream);
+            const bufferSize = 4096;
+            processor = audioCtx.createScriptProcessor
+              ? audioCtx.createScriptProcessor(bufferSize, 1, 1)
+              : audioCtx.createJavaScriptNode(bufferSize, 1, 1);
+
+            const sampleRate = audioCtx.sampleRate || 48000;
+            // Aggregate into 0.5-2s speech segments; use 1s target
+            const targetSeconds = 1.0;
+            const targetSamples = sampleRate * targetSeconds;
+            let collected = [];
+            let collectedSamples = 0;
+            let lastVoice = false;
+            const VAD_THRESHOLD = 0.01; // RMS threshold, tweak if needed
+
+            processor.onaudioprocess = (e) => {
+              try {
+                const input = e.inputBuffer.getChannelData(0);
+                // copy input to a new Float32Array
+                const chunk = new Float32Array(input.length);
+                chunk.set(input);
+                collected.push(chunk);
+                collectedSamples += chunk.length;
+
+                if (collectedSamples >= targetSamples) {
+                  // concatenate
+                  const out = new Float32Array(collectedSamples);
+                  let offset = 0;
+                  for (const c of collected) {
+                    out.set(c, offset);
+                    offset += c.length;
+                  }
+                  // reset
+                  collected = [];
+                  collectedSamples = 0;
+                  // VAD: compute RMS and send only if likely speech
+                  let sum = 0;
+                  for (let i = 0; i < out.length; i++) {
+                    sum += out[i] * out[i];
+                  }
+                  const rms = Math.sqrt(sum / Math.max(1, out.length));
+                  const isVoice = rms >= VAD_THRESHOLD;
+                  if (isVoice) {
+                    lastVoice = true;
+                    sendWavBuffer(out, sampleRate);
+                  } else {
+                    // short hangover: if we recently had voice, consider sending small non-voice to finish phrase
+                    if (lastVoice) {
+                      sendWavBuffer(out, sampleRate);
+                    }
+                    lastVoice = false;
+                  }
+                }
+              } catch (err) {
+                console.error('Audio processing error:', err);
+              }
+            };
+
+            source.connect(processor);
+            processor.connect(audioCtx.destination);
+          } catch (err) {
+            console.warn('WebAudio WAV encoder not available, falling back to MediaRecorder', err);
+          }
+        }
+
+        // Always keep a MediaRecorder fallback (with longer timeslice)
+        const audioStream = new MediaStream(mediaStream.getAudioTracks());
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : (MediaRecorder.isTypeSupported('audio/wav') ? 'audio/wav' : undefined);
+        recorder = new MediaRecorder(audioStream, mimeType ? { mimeType } : undefined);
+        const timeSlice = 8000; // increased chunk size for better container completeness
+
+        recorder.ondataavailable = async (e) => {
+          if (!e.data || e.data.size === 0) return;
+          try {
+            const arrayBuffer = await e.data.arrayBuffer();
+            const chunkMime = recorder && recorder.mimeType ? recorder.mimeType : (mimeType || 'audio/webm');
+            socket.emit('audio-data', {
+              meetingId,
+              audioData: arrayBuffer,
+              mimeType: chunkMime,
+              userId: user?._id,
+              userName: user?.name || 'User',
+              language: selectedLanguage || 'en',
+            });
+          } catch (err) {
+            console.error('Failed to send MediaRecorder audio chunk:', err);
+          }
+        };
+
+        recorder.start(timeSlice);
+        mediaRecorderRef.current = recorder;
+        intervalId = setInterval(() => {
+          if (recorder && recorder.state === 'inactive') {
+            try { recorder.start(timeSlice); } catch (e) {}
+          }
+        }, 5000);
+      } catch (err) {
+        console.warn('Background audio streaming not started:', err);
+      }
+    }
+
+    return () => {
+      if (processor) {
+        try { processor.disconnect(); } catch (e) {}
+        processor.onaudioprocess = null;
+      }
+      if (source) {
+        try { source.disconnect(); } catch (e) {}
+      }
+      if (audioCtx) {
+        try { audioCtx.close(); } catch (e) {}
+      }
+      if (recorder && recorder.state !== 'inactive') {
+        try { recorder.stop(); } catch (e) {}
+      }
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [mediaStream, socket, meetingId, user, selectedLanguage]);
+
+  // WAV encoder helpers
+  const encodeWAV = (samples, sampleRate) => {
+    const buffer = new ArrayBuffer(44 + samples.length * 2);
+    const view = new DataView(buffer);
+
+    /* RIFF identifier */ writeString(view, 0, 'RIFF');
+    /* file length */ view.setUint32(4, 36 + samples.length * 2, true);
+    /* RIFF type */ writeString(view, 8, 'WAVE');
+    /* format chunk identifier */ writeString(view, 12, 'fmt ');
+    /* format chunk length */ view.setUint32(16, 16, true);
+    /* sample format (raw) */ view.setUint16(20, 1, true);
+    /* channel count */ view.setUint16(22, 1, true);
+    /* sample rate */ view.setUint32(24, sampleRate, true);
+    /* byte rate (sampleRate * blockAlign) */ view.setUint32(28, sampleRate * 2, true);
+    /* block align (channel count * bytes per sample) */ view.setUint16(32, 2, true);
+    /* bits per sample */ view.setUint16(34, 16, true);
+    /* data chunk identifier */ writeString(view, 36, 'data');
+    /* data chunk length */ view.setUint32(40, samples.length * 2, true);
+
+    // write the PCM samples
+    floatTo16BitPCM(view, 44, samples);
+
+    return new Uint8Array(buffer);
+  };
+
+  const floatTo16BitPCM = (output, offset, input) => {
+    for (let i = 0; i < input.length; i++, offset += 2) {
+      let s = Math.max(-1, Math.min(1, input[i]));
+      s = s < 0 ? s * 0x8000 : s * 0x7fff;
+      output.setInt16(offset, s, true);
+    }
+  };
+
+  const writeString = (view, offset, string) => {
+    for (let i = 0; i < string.length; i++) {
+      view.setUint8(offset + i, string.charCodeAt(i));
+    }
+  };
 
   const screenStreamRef = useRef(null);
   const supportsDisplayMedia = () => {

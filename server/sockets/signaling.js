@@ -4,7 +4,8 @@ import Meeting from "../models/Meeting.js";
 
 const activeMeetings = new Map(); // meetingId -> Set of socket IDs
 const socketToMeeting = new Map(); // socketId -> meetingId
-const socketToUser = new Map(); // socketId -> userId
+// socketToUser moved to shared socketMap util
+import { setSocketUser, removeSocketUser, getSocketUser } from '../utils/socketMap.js';
 
 export const setupSignaling = (io) => {
   io.on("connection", (socket) => {
@@ -15,7 +16,7 @@ export const setupSignaling = (io) => {
 
       socket.join(meetingId);
       socketToMeeting.set(socket.id, meetingId);
-      socketToUser.set(socket.id, { id: userId, name: userName });
+      setSocketUser(socket.id, { id: userId, name: userName });
 
       if (!activeMeetings.has(meetingId)) {
         activeMeetings.set(meetingId, new Set());
@@ -33,7 +34,7 @@ export const setupSignaling = (io) => {
       const existingParticipants = [];
       activeMeetings.get(meetingId).forEach((socketId) => {
         if (socketId !== socket.id) {
-          const user = socketToUser.get(socketId);
+          const user = getSocketUser(socketId);
           if (user) {
             existingParticipants.push({
               socketId,
@@ -89,7 +90,7 @@ export const setupSignaling = (io) => {
 
     socket.on("send-chat-message", async ({ text }) => {
       const meetingId = socketToMeeting.get(socket.id);
-      const user = socketToUser.get(socket.id);
+      const user = getSocketUser(socket.id);
       if (!meetingId || !text || !text.trim()) return;
 
       const payload = {
@@ -197,7 +198,7 @@ export const setupSignaling = (io) => {
 
   const handleUserLeave = (socket) => {
     const meetingId = socketToMeeting.get(socket.id);
-    const user = socketToUser.get(socket.id);
+    const user = getSocketUser(socket.id);
 
     if (meetingId && user) {
       if (activeMeetings.has(meetingId)) {
@@ -214,7 +215,7 @@ export const setupSignaling = (io) => {
       });
 
       socketToMeeting.delete(socket.id);
-      socketToUser.delete(socket.id);
+      removeSocketUser(socket.id);
 
       logger.info(`User ${user.name} left meeting: ${meetingId}`);
     }

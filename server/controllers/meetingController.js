@@ -205,8 +205,12 @@ export const endMeeting = async (req, res) => {
           .map(c => {
             const text = (c.originalText || '').toString().trim();
             if (!text) return null;
+            // Prefer stored speakerName (from socket uploads) when available;
+            // otherwise fall back to populated speaker object or Unknown
             let speakerName = 'Unknown';
-            if (c.speaker) {
+            if (c.speakerName && String(c.speakerName).trim()) {
+              speakerName = c.speakerName;
+            } else if (c.speaker) {
               speakerName = typeof c.speaker === 'object' && c.speaker.name ? c.speaker.name : String(c.speaker);
             }
             return `${speakerName}: ${text}`;
@@ -215,6 +219,19 @@ export const endMeeting = async (req, res) => {
         const content = lines.join('\n') + (lines.length ? '\n' : '');
 
         meeting.captionsText = content;
+        // Save a timestamped captions file on disk for this meeting
+        try {
+          const captionsDir = path.join(__dirname, '..', 'uploads', 'captions');
+          await fs.mkdir(captionsDir, { recursive: true });
+          const timestamp = new Date().toISOString().split('T')[0];
+          const filename = `captions-${meetingId}-${timestamp}.txt`;
+          const filePath = path.join(captionsDir, filename);
+          await fs.writeFile(filePath, content, 'utf8');
+          meeting.captionsFilePath = path.join('uploads', 'captions', filename);
+        } catch (e) {
+          logger.error('Failed to write captions file to disk:', e);
+        }
+
         await meeting.save();
       }
     } catch (err) {

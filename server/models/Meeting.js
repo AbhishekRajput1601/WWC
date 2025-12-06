@@ -81,6 +81,9 @@ const meetingSchema = new mongoose.Schema({
   captionsText: {
     type: String,
   },
+  captionsFilePath: {
+    type: String,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

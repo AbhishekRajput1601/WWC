@@ -6,7 +6,10 @@ const captionEntrySchema = new Schema({
   speaker: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
+    required: false,
+  },
+  speakerName: {
+    type: String,
   },
   originalText: {
     type: String,
