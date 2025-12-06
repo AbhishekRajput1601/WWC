@@ -336,6 +336,51 @@ export default function MeetingStage({
       </div>
 
       <div ref={stageRef} className="hidden sm:flex flex-1 items-stretch justify-center bg-transparent h-full relative p-3 md:p-4 overflow-hidden">
+        {/* Connection lines SVG: draws smooth curved paths from each participant to host edge */}
+        <svg
+          className="absolute inset-0 w-full h-full pointer-events-none"
+          style={{ zIndex: 25 }}
+          viewBox={`0 0 ${stageSize.w} ${stageSize.h}`}
+          preserveAspectRatio="none"
+        >
+          {positions.map((pos, idx) => {
+            const tile = others.find((t) => t.key === pos.key);
+            if (!tile) return null;
+
+            const pCx = pos.left + tilePx / 2;
+            const pCy = pos.top + tilePx / 2;
+            const hostCx = stageSize.w / 2;
+            const hostCy = stageSize.h / 2;
+
+            let dx = hostCx - pCx;
+            let dy = hostCy - pCy;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            const partR = tilePx / 2;
+            const hostR = tilePx / 2;
+            const ux = dx / dist;
+            const uy = dy / dist;
+
+            // Start at participant edge, end at host edge (straight line)
+            const startX = pCx + ux * partR;
+            const startY = pCy + uy * partR;
+            const endX = hostCx - ux * hostR;
+            const endY = hostCy - uy * hostR;
+
+            return (
+              <line
+                key={tile.key}
+                x1={startX}
+                y1={startY}
+                x2={endX}
+                y2={endY}
+                stroke="#000"
+                strokeWidth={1}
+                strokeLinecap="round"
+                opacity={0.95}
+              />
+            );
+          })}
+        </svg>
  
         <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", zIndex: 40 }}>
           <div className="flex flex-col items-center">
